@@ -1,12 +1,11 @@
-<<<<<<< HEAD
 # TechCore E-commerce Website
 
-A modern, full-featured e-commerce website for computer components and electronics, built with a dynamic content management system and MongoDB backend.
+A modern, full-featured e-commerce website for computer components and electronics, built with a comprehensive admin panel and MongoDB backend.
 
-## 🚀 Features
+## Features
 
 ### Frontend Features
-- **Dynamic Content Management**: All text content managed through centralized `content.json` file
+- **Dynamic Content Management**: All text content managed through centralized content.json file
 - **Responsive Design**: Mobile-first design with modern glassmorphism UI
 - **Product Catalog**: Comprehensive product listing with filtering, sorting, and search
 - **Shopping Cart**: Full cart functionality with local storage persistence
@@ -20,11 +19,21 @@ A modern, full-featured e-commerce website for computer components and electroni
 - **User Management**: Authentication, authorization, and user profiles
 - **Product Management**: CRUD operations for products with advanced search
 - **Order Management**: Complete order processing and tracking system
+- **Admin Panel**: Full-featured admin dashboard for managing products, users, orders, and analytics
 - **Security**: JWT authentication, rate limiting, input validation
 - **Logging**: Comprehensive request and error logging
 - **Documentation**: Auto-generated API documentation with Swagger
 
-## 🛠 Tech Stack
+### Admin Panel Features
+- **Dashboard**: Real-time analytics and statistics
+- **Product Management**: Create, edit, delete, and manage product inventory
+- **Order Management**: View and update order statuses
+- **User Management**: View and manage user accounts
+- **Category Management**: Organize products into categories
+- **Data Seeding**: One-click database seeding with sample data
+- **Authentication**: Secure admin-only access with role-based permissions
+
+## Tech Stack
 
 ### Frontend
 - **HTML5** - Semantic markup
@@ -45,48 +54,63 @@ A modern, full-featured e-commerce website for computer components and electroni
 - **cors** - Cross-origin resource sharing
 - **express-rate-limit** - Rate limiting
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 TechCore/
-├── index.html              # Homepage
-├── category.html           # Category/product listing page
-├── cart.html              # Shopping cart page
-├── product.html           # Product detail page
-├── content.json           # Centralized content management
+├── index.html                  # Homepage
+├── category.html              # Category/product listing page
+├── cart.html                  # Shopping cart page
+├── product.html               # Product detail page
+├── admin.html                 # Admin panel
+├── fix-admin-auth.html        # Admin authentication utility
+├── content.json               # Centralized content management
 ├── css/
-│   ├── style.css          # Main styles
-│   ├── category.css       # Category page styles
-│   ├── cart.css          # Cart page styles
-│   └── product.css       # Product detail styles
+│   ├── style.css             # Main styles
+│   ├── category.css          # Category page styles
+│   ├── cart.css              # Cart page styles
+│   ├── product.css           # Product detail styles
+│   └── admin.css             # Admin panel styles
 ├── js/
-│   ├── content-manager.js # Content management system
-│   ├── script.js         # Main JavaScript
-│   ├── category.js       # Category page functionality
-│   ├── cart.js           # Cart functionality
-│   └── product.js        # Product detail functionality
+│   ├── content-manager.js    # Content management system
+│   ├── script.js             # Main JavaScript
+│   ├── category.js           # Category page functionality
+│   ├── cart.js               # Cart functionality
+│   ├── product.js            # Product detail functionality
+│   ├── admin.js              # Admin panel functionality
+│   ├── api-client.js         # API communication layer
+│   └── data-seeder.js        # Database seeding utility
 └── server/
-    ├── server.js         # Main server file
-    ├── package.json      # Dependencies
-    ├── env.example       # Environment variables template
+    ├── server.js             # Main server file
+    ├── package.json          # Dependencies
+    ├── .env                  # Environment variables (not in repo)
+    ├── env.example           # Environment variables template
     ├── config/
-    │   └── database.js   # Database configuration
+    │   └── database.js       # Database configuration
     ├── models/
-    │   ├── User.js       # User model
-    │   ├── Product.js    # Product model
-    │   └── Order.js      # Order model
+    │   ├── User.js           # User model
+    │   ├── Product.js        # Product model
+    │   ├── Order.js          # Order model
+    │   └── Category.js       # Category model
     ├── routes/
-    │   ├── auth.js       # Authentication routes
-    │   ├── products.js   # Product routes
-    │   ├── cart.js       # Cart routes
-    │   └── wishlist.js   # Wishlist routes
-    └── middleware/
-        ├── auth.js       # Authentication middleware
-        ├── errorHandler.js # Error handling
-        └── logger.js     # Request logging
+    │   ├── auth.js           # Authentication routes
+    │   ├── products.js       # Product routes
+    │   ├── cart.js           # Cart routes
+    │   ├── wishlist.js       # Wishlist routes
+    │   ├── categories.js     # Category routes
+    │   ├── orders.js         # Order routes
+    │   ├── users.js          # User management routes
+    │   ├── analytics.js      # Analytics routes
+    │   └── search.js         # Search routes
+    ├── middleware/
+    │   ├── auth.js           # Authentication middleware
+    │   ├── errorHandler.js   # Error handling
+    │   └── logger.js         # Request logging
+    └── scripts/
+        └── create-admin.js   # Admin user creation script
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js (v14 or higher)
@@ -97,7 +121,7 @@ TechCore/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/techcore-ecommerce.git
+   git clone https://github.com/djim00o/techcore-ecommerce.git
    cd techcore-ecommerce
    ```
 
@@ -117,8 +141,8 @@ TechCore/
    NODE_ENV=development
    PORT=5234
    MONGODB_URI=mongodb://localhost:27017/techcore_ecommerce
-   JWT_SECRET=your-super-secure-jwt-secret
-   # ... see env.example for all options
+   JWT_SECRET=your-super-secure-jwt-secret-key-here
+   FRONTEND_URL=http://localhost:8080
    ```
 
 4. **Start MongoDB**
@@ -127,19 +151,35 @@ TechCore/
    mongod
    ```
 
-5. **Start the server**
+5. **Start the backend server**
    ```bash
-   npm run dev
-   # or
    npm start
    ```
 
-6. **Open the frontend**
-   - Open `index.html` in your browser
-   - Or use a local server like Live Server for VS Code
-   - Or serve with Python: `python -m http.server 3000`
+6. **Start the frontend server**
+   ```bash
+   # In the project root directory
+   python3 -m http.server 8080
+   # or use Live Server extension in VS Code
+   ```
 
-## 📖 API Documentation
+7. **Create admin user**
+   ```bash
+   # In server directory
+   node scripts/create-admin.js
+   ```
+
+### Access Points
+- **Main Website**: http://localhost:8080/index.html
+- **Admin Panel**: http://localhost:8080/admin.html
+- **API Documentation**: http://localhost:5234/api-docs
+- **Health Check**: http://localhost:5234/health
+
+### Default Admin Credentials
+- **Email**: admin@techcore.com
+- **Password**: admin123456
+
+## API Documentation
 
 ### Base URL
 ```
@@ -163,6 +203,13 @@ http://localhost:5234/api
 - `GET /products/search?q=query` - Search products
 - `POST /products/:id/reviews` - Add product review
 
+### Category Endpoints
+- `GET /categories` - Get all categories
+- `GET /categories/:id` - Get single category
+- `POST /categories` - Create category (Admin only)
+- `PUT /categories/:id` - Update category (Admin only)
+- `DELETE /categories/:id` - Delete category (Admin only)
+
 ### Cart Endpoints
 - `GET /cart` - Get user's cart
 - `POST /cart/add` - Add item to cart
@@ -170,10 +217,10 @@ http://localhost:5234/api
 - `DELETE /cart/remove` - Remove item from cart
 - `DELETE /cart/clear` - Clear entire cart
 
-### Wishlist Endpoints
-- `GET /wishlist` - Get user's wishlist
-- `POST /wishlist/add` - Add item to wishlist
-- `DELETE /wishlist/remove` - Remove item from wishlist
+### Admin Endpoints
+- `GET /users` - Get all users (Admin only)
+- `GET /orders` - Get all orders (Admin only)
+- `GET /analytics/dashboard` - Get dashboard analytics (Admin only)
 
 ### Interactive API Documentation
 When running in development mode, visit:
@@ -181,7 +228,22 @@ When running in development mode, visit:
 http://localhost:5234/api-docs
 ```
 
-## 🎨 Content Management
+## Admin Panel Usage
+
+### Accessing the Admin Panel
+1. Navigate to `http://localhost:8080/admin.html`
+2. Login with admin credentials
+3. If authentication issues occur, use the fix utility at `http://localhost:8080/fix-admin-auth.html`
+
+### Admin Features
+- **Dashboard**: View real-time statistics including revenue, orders, products, and users
+- **Product Management**: Add, edit, delete products with full specification management
+- **Order Management**: View and update order statuses
+- **User Management**: View user accounts and manage permissions
+- **Category Management**: Organize products into categories
+- **Data Seeding**: Populate database with sample products and categories
+
+## Content Management
 
 The website uses a centralized content management system through `content.json`. This allows easy modification of all text content without touching HTML files.
 
@@ -212,7 +274,7 @@ Content is automatically loaded and applied to elements with `data-content` attr
 <p data-content="categories.graphics-cards.description">High-performance GPUs</p>
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 Key environment variables (see `env.example` for full list):
@@ -222,16 +284,14 @@ Key environment variables (see `env.example` for full list):
 - `MONGODB_URI` - MongoDB connection string
 - `JWT_SECRET` - JWT signing secret
 - `FRONTEND_URL` - Frontend URL for CORS
+- `BCRYPT_ROUNDS` - Password hashing rounds (default: 12)
+- `RATE_LIMIT_WINDOW_MS` - Rate limiting window (default: 900000)
+- `RATE_LIMIT_MAX_REQUESTS` - Max requests per window (default: 100)
 
 ### Database Configuration
 The application automatically connects to MongoDB using the provided URI. Collections are created automatically when first used.
 
-### Default Admin User
-On first run with `SEED_DATABASE=true`, an admin user is created:
-- Email: admin@techcore.com
-- Password: Admin123!
-
-## 🔒 Security Features
+## Security Features
 
 - **JWT Authentication** - Secure token-based authentication
 - **Password Hashing** - bcrypt with configurable rounds
@@ -239,9 +299,10 @@ On first run with `SEED_DATABASE=true`, an admin user is created:
 - **Input Validation** - Server-side validation for all inputs
 - **CORS Protection** - Configurable cross-origin resource sharing
 - **Security Headers** - Helmet.js for secure HTTP headers
+- **Role-based Access Control** - Admin and user role separation
 - **Error Handling** - Secure error responses without sensitive data
 
-## 🚀 Deployment
+## Deployment
 
 ### Production Setup
 
@@ -257,21 +318,25 @@ On first run with `SEED_DATABASE=true`, an admin user is created:
 
 3. **Secure JWT secrets**
    ```env
-   JWT_SECRET=your-secure-production-secret
+   JWT_SECRET=your-secure-production-secret-minimum-32-characters
    ```
 
-4. **Build and start**
+4. **Configure CORS for production**
+   ```env
+   FRONTEND_URL=https://your-domain.com
+   ```
+
+5. **Build and start**
    ```bash
-   npm run build
    npm start
    ```
 
 ### Recommended Hosting
 - **Frontend**: Netlify, Vercel, or GitHub Pages
-- **Backend**: Heroku, DigitalOcean, or AWS
+- **Backend**: Heroku, DigitalOcean, Railway, or AWS
 - **Database**: MongoDB Atlas
 
-## 🧪 Testing
+## Testing
 
 ### Manual Testing
 1. Start the server: `npm start`
@@ -279,12 +344,36 @@ On first run with `SEED_DATABASE=true`, an admin user is created:
 3. Test user registration and login
 4. Test product browsing and search
 5. Test cart functionality
-6. Test API endpoints with Postman
+6. Test admin panel access and features
+7. Test API endpoints with Postman
 
 ### API Testing
 Use the Swagger documentation at `/api-docs` for interactive testing.
 
-## 🤝 Contributing
+## Troubleshooting
+
+### Common Issues
+
+1. **Server won't start**
+   - Check MongoDB is running
+   - Verify environment variables in `.env`
+   - Ensure port 5234 is not in use
+
+2. **Admin login fails**
+   - Use the fix utility at `/fix-admin-auth.html`
+   - Verify admin user exists in database
+   - Check JWT secret configuration
+
+3. **CORS errors**
+   - Verify `FRONTEND_URL` in environment variables
+   - Check server CORS configuration
+
+4. **Database connection fails**
+   - Verify MongoDB URI format
+   - Check database server status
+   - Ensure network connectivity
+
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
@@ -292,11 +381,17 @@ Use the Swagger documentation at `/api-docs` for interactive testing.
 4. Push to branch: `git push origin feature-name`
 5. Submit a pull request
 
-## 📝 License
+### Development Guidelines
+- Follow existing code style and conventions
+- Add comments for complex functionality
+- Test changes thoroughly before submitting
+- Update documentation as needed
+
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
+## Support
 
 If you encounter any issues:
 
@@ -305,30 +400,29 @@ If you encounter any issues:
 3. Ensure all environment variables are set
 4. Check the server logs
 5. Review API documentation at `/api-docs`
+6. Use the admin authentication fix utility if needed
 
-## 📋 Todo/Roadmap
+## Roadmap
 
-- [ ] Order management system
-- [ ] Payment integration (Stripe)
+- [ ] Payment integration (Stripe/PayPal)
 - [ ] Email notifications
-- [ ] Admin dashboard
-- [ ] Product image uploads
+- [ ] Product image uploads with Cloudinary
 - [ ] Advanced search filters
 - [ ] Product recommendations
-- [ ] Reviews and ratings
 - [ ] Multi-language support
 - [ ] Unit and integration tests
+- [ ] Docker containerization
+- [ ] CI/CD pipeline
+- [ ] Performance optimization
 
-## 🎉 Acknowledgments
+## Acknowledgments
 
 - Design inspiration from modern e-commerce platforms
 - Icons from FontAwesome
 - Fonts from Google Fonts
-- Community feedback and contributions
+- MongoDB and Express.js communities
+- Open source contributors
 
 ---
 
-Built with ❤️ for the tech community 
-=======
-# techcore-ecommerce
->>>>>>> 66dbaab8be615a741f1496155834d2b4d04c7343
+Built for the tech community
