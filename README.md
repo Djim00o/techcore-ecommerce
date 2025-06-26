@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # TechCore E-commerce Website
 
 A modern, full-featured e-commerce website for computer components and electronics, built with a dynamic content management system and MongoDB backend.
@@ -328,3 +329,6 @@ If you encounter any issues:
 ---
 
 Built with ❤️ for the tech community 
+=======
+# techcore-ecommerce
+>>>>>>> 66dbaab8be615a741f1496155834d2b4d04c7343
