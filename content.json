@@ -1,0 +1,290 @@
+{
+  "site": {
+    "name": "TechCore",
+    "tagline": "Your One-Stop Tech Shop for PC Components",
+    "description": "Discover cutting-edge hardware and components to build the ultimate gaming rig or workstation.",
+    "copyright": "© 2024 TechCore. All rights reserved."
+  },
+  "navigation": {
+    "home": "Home",
+    "components": "Components",
+    "laptops": "Laptops",
+    "accessories": "Accessories",
+    "deals": "Deals",
+    "support": "Support",
+    "account": "My Account",
+    "cart": "Cart",
+    "wishlist": "Wishlist"
+  },
+  "categories": {
+    "graphics-cards": {
+      "name": "Graphics Cards",
+      "description": "High-performance GPUs for gaming and content creation",
+      "icon": "fas fa-tv",
+      "fullDescription": "Experience cutting-edge gaming and professional graphics performance with our selection of graphics cards from leading brands like NVIDIA and AMD."
+    },
+    "processors": {
+      "name": "Processors",
+      "description": "Latest CPUs for maximum performance",
+      "icon": "fas fa-microchip",
+      "fullDescription": "Power your system with the latest processors from Intel and AMD, designed for gaming, content creation, and professional workloads."
+    },
+    "motherboards": {
+      "name": "Motherboards",
+      "description": "High-quality motherboards for all builds",
+      "icon": "fas fa-memory",
+      "fullDescription": "Build the foundation of your PC with our premium motherboards featuring the latest chipsets and cutting-edge features."
+    },
+    "memory": {
+      "name": "Memory (RAM)",
+      "description": "Fast DDR4 and DDR5 memory modules",
+      "icon": "fas fa-save",
+      "fullDescription": "Boost your system's performance with high-speed memory modules from trusted brands like Corsair, G.Skill, and Kingston."
+    },
+    "storage": {
+      "name": "Storage",
+      "description": "SSDs and HDDs for all your storage needs",
+      "icon": "fas fa-hdd",
+      "fullDescription": "Store your data with confidence using our selection of high-performance SSDs and reliable HDDs from leading manufacturers."
+    },
+    "laptops": {
+      "name": "Laptops",
+      "description": "Gaming and professional laptops",
+      "icon": "fas fa-laptop",
+      "fullDescription": "Discover powerful gaming laptops and professional workstations designed for portability and performance."
+    },
+    "accessories": {
+      "name": "Accessories",
+      "description": "Cables, peripherals, and components",
+      "icon": "fas fa-plug",
+      "fullDescription": "Complete your setup with essential accessories including cables, cooling solutions, and premium peripherals."
+    }
+  },
+  "homepage": {
+    "hero": {
+      "title": "Build Your Dream PC",
+      "subtitle": "Discover cutting-edge components for the ultimate gaming experience",
+      "cta": "Shop Now",
+      "features": [
+        "Latest Hardware",
+        "Expert Support",
+        "Fast Shipping"
+      ]
+    },
+    "sections": {
+      "featuredCategories": "Featured Categories",
+      "newArrivals": "New Arrivals",
+      "bestSellers": "Best Sellers",
+      "dealsOfTheWeek": "Deals of the Week",
+      "whyChooseUs": "Why Choose TechCore?",
+      "newsletter": "Stay Updated"
+    },
+    "features": {
+      "quality": {
+        "title": "Premium Quality",
+        "description": "Only the best components from trusted brands",
+        "icon": "fas fa-star"
+      },
+      "support": {
+        "title": "Expert Support",
+        "description": "Get help from our knowledgeable team",
+        "icon": "fas fa-headset"
+      },
+      "shipping": {
+        "title": "Fast Shipping",
+        "description": "Quick and reliable delivery worldwide",
+        "icon": "fas fa-shipping-fast"
+      },
+      "warranty": {
+        "title": "Warranty",
+        "description": "Comprehensive warranty on all products",
+        "icon": "fas fa-shield-alt"
+      }
+    },
+    "newsletter": {
+      "title": "Stay Updated with the Latest Tech",
+      "subtitle": "Get exclusive deals, product launches, and tech tips delivered to your inbox",
+      "placeholder": "Enter your email address",
+      "button": "Subscribe",
+      "privacy": "We respect your privacy. Unsubscribe at any time."
+    }
+  },
+  "productListing": {
+    "filters": {
+      "title": "Filters",
+      "price": "Price Range",
+      "brand": "Brand",
+      "availability": "Availability",
+      "rating": "Customer Rating",
+      "features": "Features",
+      "apply": "Apply Filters",
+      "clear": "Clear All"
+    },
+    "sorting": {
+      "title": "Sort by:",
+      "options": {
+        "relevance": "Relevance",
+        "priceLowHigh": "Price: Low to High",
+        "priceHighLow": "Price: High to Low",
+        "newest": "Newest First",
+        "topRated": "Top Rated",
+        "bestselling": "Best Selling"
+      }
+    },
+    "pagination": {
+      "showing": "Showing {start} - {end} of {total} products",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "productDetail": {
+    "buttons": {
+      "addToCart": "Add to Cart",
+      "addToWishlist": "Add to Wishlist",
+      "removeFromWishlist": "Remove from Wishlist",
+      "share": "Share",
+      "writeReview": "Write a Review"
+    },
+    "tabs": {
+      "specifications": "Specifications",
+      "description": "Description",
+      "reviews": "Reviews",
+      "shipping": "Shipping & Returns"
+    },
+    "shipping": {
+      "freeShipping": "Free Shipping",
+      "freeShippingDesc": "on orders over $50",
+      "returns": "30-Day Returns",
+      "returnsDesc": "Free returns on all items",
+      "warranty": "Warranty",
+      "warrantyDesc": "2 years manufacturer warranty"
+    },
+    "availability": {
+      "inStock": "In Stock",
+      "outOfStock": "Out of Stock",
+      "lowStock": "Low Stock",
+      "preOrder": "Pre-Order"
+    },
+    "reviews": {
+      "title": "Customer Reviews",
+      "noReviews": "No reviews yet. Be the first to review this product!",
+      "verified": "Verified Purchase",
+      "helpful": "Helpful",
+      "loadMore": "Load More Reviews"
+    }
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "emptyDescription": "Looks like you haven't added anything to your cart yet",
+    "continueShopping": "Continue Shopping",
+    "remove": "Remove",
+    "quantity": "Qty",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "total": "Total",
+    "checkout": "Proceed to Checkout",
+    "promoCode": "Promo Code",
+    "apply": "Apply"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "steps": {
+      "shipping": "Shipping Information",
+      "payment": "Payment Details",
+      "review": "Review Order"
+    },
+    "shippingInfo": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "address": "Street Address",
+      "city": "City",
+      "state": "State/Province",
+      "zipCode": "ZIP/Postal Code",
+      "country": "Country"
+    },
+    "paymentMethods": {
+      "creditCard": "Credit Card",
+      "paypal": "PayPal",
+      "applePay": "Apple Pay",
+      "googlePay": "Google Pay"
+    },
+    "orderSummary": "Order Summary",
+    "placeOrder": "Place Order"
+  },
+  "account": {
+    "dashboard": "Account Dashboard",
+    "profile": "Profile Information",
+    "orders": "Order History",
+    "addresses": "Addresses",
+    "wishlist": "Wishlist",
+    "logout": "Logout",
+    "editProfile": "Edit Profile",
+    "changePassword": "Change Password"
+  },
+  "footer": {
+    "sections": {
+      "categories": "Categories",
+      "support": "Support",
+      "company": "Company",
+      "followUs": "Follow Us"
+    },
+    "links": {
+      "helpCenter": "Help Center",
+      "contactUs": "Contact Us",
+      "shippingInfo": "Shipping Info",
+      "returns": "Returns",
+      "warranty": "Warranty",
+      "aboutUs": "About Us",
+      "careers": "Careers",
+      "press": "Press",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    }
+  },
+  "messages": {
+    "success": {
+      "addedToCart": "Product added to cart!",
+      "addedToWishlist": "Added to wishlist!",
+      "removedFromWishlist": "Removed from wishlist",
+      "reviewSubmitted": "Review submitted successfully!",
+      "subscribed": "Successfully subscribed to newsletter!",
+      "orderPlaced": "Order placed successfully!"
+    },
+    "error": {
+      "outOfStock": "Product is out of stock",
+      "invalidQuantity": "Invalid quantity selected",
+      "networkError": "Network error. Please try again.",
+      "invalidEmail": "Please enter a valid email address",
+      "requiredFields": "Please fill in all required fields"
+    },
+    "info": {
+      "loading": "Loading...",
+      "noResults": "No results found",
+      "tryAgain": "Please try again"
+    }
+  },
+  "search": {
+    "placeholder": "Search for components...",
+    "suggestions": "Search Suggestions",
+    "noResults": "No products found",
+    "resultsFor": "Results for \"{query}\"",
+    "popularSearches": "Popular Searches"
+  },
+  "badges": {
+    "new": "New",
+    "sale": "Sale",
+    "bestseller": "Bestseller",
+    "lowStock": "Low Stock",
+    "freeShipping": "Free Shipping"
+  },
+  "trust": {
+    "secureCheckout": "Secure Checkout",
+    "moneyBackGuarantee": "Money Back Guarantee",
+    "fastShipping": "Fast Shipping",
+    "customerSupport": "24/7 Customer Support"
+  }
+} 

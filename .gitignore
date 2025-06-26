@@ -1,0 +1,310 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# Bower dependency directory (https://bower.io/)
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons (https://nodejs.org/api/addons.html)
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# Snowpack dependency directory (https://snowpack.dev/)
+web_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads directory (if you add file uploads)
+uploads/
+public/uploads/
+
+# Temporary files
+tmp/
+temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build directories
+build/
+dist/
+
+# PM2 process files
+.pm2/
+
+# SSL certificates (if any)
+*.pem
+*.key
+*.crt
+*.cert
+
+# Backup files
+*.bak
+*.backup
+
+# Test files
+test-results/
+coverage/
+
+# Documentation build
+docs/build/
+
+# Local development files
+.local
+.cache
+
+# Docker files (optional - uncomment if you add Docker)
+# Dockerfile
+# docker-compose.yml
+# .dockerignore
+
+# Kubernetes files (optional)
+# *.yaml
+# *.yml
+
+# Terraform files (optional)
+# *.tfstate
+# *.tfstate.*
+# .terraform/
+
+# AWS files (optional)
+# .aws/
+
+# Deployment files
+deploy/
+deployment/
+
+# Local configuration overrides
+config/local.js
+config/local.json
+
+# Session store files
+sessions/
+
+# Redis dump files
+dump.rdb
+
+# MongoDB dump files
+mongodump/
+
+# Elasticsearch data
+elasticsearch/
+
+# Application specific
+public/images/uploads/
+public/assets/temp/
+
+# Cloudinary cache (if using Cloudinary)
+.cloudinary/
+
+# Stripe webhook logs
+stripe-webhooks.log
+
+# Email templates cache
+.email-cache/
+
+# Analytics data
+analytics/
+
+# Backup database files
+*.sql
+*.dump
+
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+
+# Large media files (add specific extensions as needed)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+
+# Audio files
+*.mp3
+*.wav
+*.flac
+*.aac
+
+# Large image files
+*.psd
+*.ai
+*.eps
+
+# Archive files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs from applications
+application.log
+error.log
+access.log
+combined.log
+
+# Testing artifacts
+screenshots/
+test-reports/
+
+# Security files
+.secrets
+secrets/
+private/
+.private/
+
+# Local development overrides
+.local.env
+local.config.js
+
+# Performance monitoring
+newrelic.js
+newrelic_agent.log
+
+# Git hooks
+.git/hooks/
+
+# Temporary directories
+.tmp/
+.temp/ 

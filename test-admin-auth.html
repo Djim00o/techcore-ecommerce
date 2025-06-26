@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Auth Test - TechCore</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #2a2a2a;
+            border-radius: 8px;
+            border-left: 4px solid #00d4ff;
+        }
+        .success { border-left-color: #00ff88; }
+        .error { border-left-color: #ff4444; }
+        .warning { border-left-color: #ffaa00; }
+        button {
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 0.5rem;
+        }
+        button:hover {
+            background: #00b8e6;
+        }
+        pre {
+            background: #000;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+        .status.success { background: #00ff88; color: #000; }
+        .status.error { background: #ff4444; color: #fff; }
+        .status.warning { background: #ffaa00; color: #000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 TechCore Admin Authentication Test</h1>
+        <p>This page will help diagnose admin authentication issues.</p>
+
+        <div class="test-section">
+            <h3>📋 Current Status</h3>
+            <div id="statusInfo">Loading...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Test Actions</h3>
+            <button onclick="testLogin()">Test Login</button>
+            <button onclick="testAuthMe()">Test /auth/me</button>
+            <button onclick="testAdminAccess()">Test Admin Access</button>
+            <button onclick="clearStorage()">Clear Storage</button>
+            <button onclick="refreshStatus()">Refresh Status</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="testResults">No tests run yet.</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🗂️ Storage Contents</h3>
+            <div id="storageContents">Loading...</div>
+        </div>
+    </div>
+
+    <script src="js/api-client.js"></script>
+    <script>
+        const apiClient = new APIClient();
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const resultsDiv = document.getElementById('testResults');
+            const statusClass = type === 'success' ? 'success' : type === 'error' ? 'error' : 'warning';
+            
+            resultsDiv.innerHTML += `
+                <div class="test-section ${statusClass}">
+                    <strong>[${timestamp}]</strong> ${message}
+                </div>
+            `;
+            
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        async function testLogin() {
+            log('🔐 Testing admin login...', 'info');
+            try {
+                const response = await apiClient.login('admin@techcore.com', 'admin123456');
+                if (response.success) {
+                    log(`✅ Login successful! Token: ${response.token ? 'Present' : 'Missing'}`, 'success');
+                    log(`👤 User: ${response.user.firstName} ${response.user.lastName} (${response.user.role})`, 'success');
+                    refreshStatus();
+                } else {
+                    log(`❌ Login failed: ${response.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuthMe() {
+            log('🔍 Testing /auth/me endpoint...', 'info');
+            try {
+                const response = await apiClient.request('/auth/me');
+                if (response.success) {
+                    log(`✅ Auth check successful!`, 'success');
+                    log(`👤 User: ${response.user.firstName} ${response.user.lastName} (${response.user.role})`, 'success');
+                    log(`🎫 Is Admin: ${response.user.role === 'admin' ? 'YES' : 'NO'}`, response.user.role === 'admin' ? 'success' : 'error');
+                } else {
+                    log(`❌ Auth check failed: ${response.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Auth check error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminAccess() {
+            log('🛡️ Testing admin access logic...', 'info');
+            
+            const token = localStorage.getItem('authToken');
+            log(`🎫 Token in storage: ${token ? 'Present' : 'Missing'}`, token ? 'success' : 'error');
+            
+            if (!token) {
+                log('❌ No token found - admin access should be denied', 'error');
+                return;
+            }
+
+            try {
+                const response = await apiClient.request('/auth/me');
+                log(`📡 API Response received`, 'info');
+                log(`✅ Success: ${response.success}`, response.success ? 'success' : 'error');
+                
+                if (response.success && response.user) {
+                    log(`👤 User Role: ${response.user.role}`, 'info');
+                    log(`🔐 Is Admin: ${response.user.role === 'admin'}`, response.user.role === 'admin' ? 'success' : 'error');
+                    
+                    if (response.user.role === 'admin') {
+                        log('🎉 ADMIN ACCESS SHOULD BE GRANTED!', 'success');
+                    } else {
+                        log('❌ Admin access should be denied (not admin role)', 'error');
+                    }
+                } else {
+                    log('❌ Invalid response structure', 'error');
+                }
+            } catch (error) {
+                log(`❌ Admin access test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function clearStorage() {
+            localStorage.clear();
+            log('🗑️ LocalStorage cleared', 'warning');
+            refreshStatus();
+        }
+
+        function refreshStatus() {
+            updateStatusInfo();
+            updateStorageContents();
+        }
+
+        function updateStatusInfo() {
+            const token = localStorage.getItem('authToken');
+            const user = localStorage.getItem('user');
+            const isLoggedIn = apiClient.isLoggedIn();
+            const currentUser = apiClient.getCurrentUser();
+            
+            const statusDiv = document.getElementById('statusInfo');
+            statusDiv.innerHTML = `
+                <p><strong>Logged In:</strong> <span class="status ${isLoggedIn ? 'success' : 'error'}">${isLoggedIn ? 'YES' : 'NO'}</span></p>
+                <p><strong>Token Present:</strong> <span class="status ${token ? 'success' : 'error'}">${token ? 'YES' : 'NO'}</span></p>
+                <p><strong>User Data:</strong> <span class="status ${user ? 'success' : 'error'}">${user ? 'YES' : 'NO'}</span></p>
+                ${currentUser ? `<p><strong>Current User:</strong> ${currentUser.firstName} ${currentUser.lastName} (${currentUser.role})</p>` : ''}
+            `;
+        }
+
+        function updateStorageContents() {
+            const storageDiv = document.getElementById('storageContents');
+            const token = localStorage.getItem('authToken');
+            const user = localStorage.getItem('user');
+            
+            storageDiv.innerHTML = `
+                <h4>🎫 Auth Token:</h4>
+                <pre>${token ? token.substring(0, 50) + '...' : 'Not found'}</pre>
+                
+                <h4>👤 User Data:</h4>
+                <pre>${user ? JSON.stringify(JSON.parse(user), null, 2) : 'Not found'}</pre>
+            `;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Admin Auth Test initialized', 'success');
+            refreshStatus();
+        });
+    </script>
+</body>
+</html> 

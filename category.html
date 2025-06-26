@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Products - TechCore</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/category.css">
+</head>
+<body>
+    <!-- Header & Navigation -->
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <i class="fas fa-microchip"></i>
+                <span>TechCore</span>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" placeholder="Search for components..." class="search-input" id="searchInput">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
+                <div class="search-suggestions" id="searchSuggestions"></div>
+            </div>
+            
+            <div class="nav-links">
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link">Components <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-menu">
+                        <a href="category.html?cat=graphics-cards" class="dropdown-item">
+                            <i class="fas fa-tv"></i> Graphics Cards
+                        </a>
+                        <a href="category.html?cat=processors" class="dropdown-item">
+                            <i class="fas fa-microchip"></i> Processors
+                        </a>
+                        <a href="category.html?cat=motherboards" class="dropdown-item">
+                            <i class="fas fa-memory"></i> Motherboards
+                        </a>
+                        <a href="category.html?cat=memory" class="dropdown-item">
+                            <i class="fas fa-save"></i> Memory (RAM)
+                        </a>
+                        <a href="category.html?cat=storage" class="dropdown-item">
+                            <i class="fas fa-hdd"></i> Storage
+                        </a>
+                    </div>
+                </div>
+                <a href="category.html?cat=laptops" class="nav-link">Laptops</a>
+                <a href="category.html?cat=accessories" class="nav-link">Accessories</a>
+                <a href="index.html#deals" class="nav-link">Deals</a>
+                <a href="support.html" class="nav-link">Support</a>
+            </div>
+            
+            <div class="nav-actions">
+                <a href="account.html" class="nav-action">
+                    <i class="fas fa-user"></i>
+                </a>
+                <a href="wishlist.html" class="nav-action">
+                    <i class="fas fa-heart"></i>
+                    <span class="badge" id="wishlistCount">0</span>
+                </a>
+                <a href="cart.html" class="nav-action cart-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="badge" id="cartCount">0</span>
+                </a>
+            </div>
+            
+            <div class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Breadcrumbs -->
+    <section class="breadcrumbs">
+        <div class="container">
+            <nav class="breadcrumb-nav">
+                <a href="index.html" class="breadcrumb-item">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item active" id="currentCategory">Products</span>
+            </nav>
+        </div>
+    </section>
+
+    <!-- Category Header -->
+    <section class="category-header">
+        <div class="container">
+            <div class="category-banner">
+                <div class="category-info">
+                    <h1 class="category-title" id="categoryTitle">All Products</h1>
+                    <p class="category-description" id="categoryDescription">Discover our complete range of premium computer components and accessories</p>
+                    <div class="category-stats">
+                        <span class="product-count" id="productCount">Loading...</span>
+                        <span class="separator">•</span>
+                        <span class="category-features">Free shipping on orders $50+</span>
+                    </div>
+                </div>
+                <div class="category-visual">
+                    <div class="category-icon-large" id="categoryIcon">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products-section">
+        <div class="container">
+            <div class="products-container">
+                <!-- Filters Sidebar -->
+                <aside class="filters-sidebar">
+                    <div class="filters-header">
+                        <h3>Filters</h3>
+                        <button class="clear-filters" id="clearFilters">Clear All</button>
+                    </div>
+                    
+                    <!-- Price Range Filter -->
+                    <div class="filter-group">
+                        <h4 class="filter-title">
+                            <i class="fas fa-dollar-sign"></i>
+                            Price Range
+                        </h4>
+                        <div class="price-range">
+                            <div class="price-inputs">
+                                <input type="number" class="price-input" id="minPrice" placeholder="Min" min="0">
+                                <span class="price-separator">-</span>
+                                <input type="number" class="price-input" id="maxPrice" placeholder="Max" min="0">
+                            </div>
+                            <div class="price-slider">
+                                <input type="range" class="range-slider" id="priceRange" min="0" max="2000" step="50">
+                                <div class="range-track"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Brand Filter -->
+                    <div class="filter-group">
+                        <h4 class="filter-title">
+                            <i class="fas fa-tags"></i>
+                            Brand
+                        </h4>
+                        <div class="filter-options" id="brandFilters">
+                            <label class="filter-option">
+                                <input type="checkbox" value="nvidia">
+                                <span class="checkmark"></span>
+                                NVIDIA <span class="count">(8)</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="amd">
+                                <span class="checkmark"></span>
+                                AMD <span class="count">(6)</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="intel">
+                                <span class="checkmark"></span>
+                                Intel <span class="count">(12)</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="asus">
+                                <span class="checkmark"></span>
+                                ASUS <span class="count">(15)</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="corsair">
+                                <span class="checkmark"></span>
+                                Corsair <span class="count">(9)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Availability Filter -->
+                    <div class="filter-group">
+                        <h4 class="filter-title">
+                            <i class="fas fa-check-circle"></i>
+                            Availability
+                        </h4>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="checkbox" value="in-stock" checked>
+                                <span class="checkmark"></span>
+                                In Stock Only
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="on-sale">
+                                <span class="checkmark"></span>
+                                On Sale
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="new-arrivals">
+                                <span class="checkmark"></span>
+                                New Arrivals
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Rating Filter -->
+                    <div class="filter-group">
+                        <h4 class="filter-title">
+                            <i class="fas fa-star"></i>
+                            Customer Rating
+                        </h4>
+                        <div class="rating-filters">
+                            <label class="rating-option">
+                                <input type="radio" name="rating" value="4+">
+                                <div class="stars">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                </div>
+                                <span>4+ Stars</span>
+                            </label>
+                            <label class="rating-option">
+                                <input type="radio" name="rating" value="3+">
+                                <div class="stars">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                </div>
+                                <span>3+ Stars</span>
+                            </label>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Products Grid -->
+                <div class="products-main">
+                    <!-- Toolbar -->
+                    <div class="products-toolbar">
+                        <div class="toolbar-left">
+                            <button class="view-toggle active" data-view="grid">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button class="view-toggle" data-view="list">
+                                <i class="fas fa-list"></i>
+                            </button>
+                            <span class="results-count" id="resultsCount">Showing 1-12 of 48 results</span>
+                        </div>
+                        
+                        <div class="toolbar-right">
+                            <div class="sort-dropdown">
+                                <select class="sort-select" id="sortSelect">
+                                    <option value="featured">Sort by: Featured</option>
+                                    <option value="price-low">Price: Low to High</option>
+                                    <option value="price-high">Price: High to Low</option>
+                                    <option value="name">Name: A to Z</option>
+                                    <option value="rating">Highest Rated</option>
+                                    <option value="newest">Newest First</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Grid -->
+                    <div class="products-grid" id="productsGrid">
+                        <!-- Products will be dynamically inserted here -->
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination">
+                        <button class="pagination-btn prev" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                            Previous
+                        </button>
+                        
+                        <div class="pagination-numbers">
+                            <button class="pagination-number active">1</button>
+                            <button class="pagination-number">2</button>
+                            <button class="pagination-number">3</button>
+                            <span class="pagination-dots">...</span>
+                            <button class="pagination-number">8</button>
+                        </div>
+                        
+                        <button class="pagination-btn next">
+                            Next
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-microchip"></i>
+                        <span>TechCore</span>
+                    </div>
+                    <p>Your trusted partner for premium PC components and tech solutions.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Categories</h4>
+                    <ul>
+                        <li><a href="category.html?cat=graphics-cards">Graphics Cards</a></li>
+                        <li><a href="category.html?cat=processors">Processors</a></li>
+                        <li><a href="category.html?cat=motherboards">Motherboards</a></li>
+                        <li><a href="category.html?cat=memory">Memory</a></li>
+                        <li><a href="category.html?cat=storage">Storage</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="support.html">Help Center</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="shipping.html">Shipping Info</a></li>
+                        <li><a href="returns.html">Returns</a></li>
+                        <li><a href="warranty.html">Warranty</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="careers.html">Careers</a></li>
+                        <li><a href="press.html">Press</a></li>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="payment-methods">
+                    <i class="fab fa-cc-visa"></i>
+                    <i class="fab fa-cc-mastercard"></i>
+                    <i class="fab fa-cc-amex"></i>
+                    <i class="fab fa-paypal"></i>
+                    <i class="fab fa-apple-pay"></i>
+                </div>
+                <p>&copy; 2024 TechCore. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu">
+        <div class="mobile-menu-content">
+            <div class="mobile-menu-header">
+                <div class="logo">
+                    <i class="fas fa-microchip"></i>
+                    <span>TechCore</span>
+                </div>
+                <button class="mobile-menu-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <nav class="mobile-nav">
+                <a href="index.html" class="mobile-nav-link">Home</a>
+                <a href="category.html" class="mobile-nav-link">Components</a>
+                <a href="category.html?cat=laptops" class="mobile-nav-link">Laptops</a>
+                <a href="category.html?cat=accessories" class="mobile-nav-link">Accessories</a>
+                <a href="index.html#deals" class="mobile-nav-link">Deals</a>
+                <a href="support.html" class="mobile-nav-link">Support</a>
+                <a href="account.html" class="mobile-nav-link">My Account</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Mobile Filters -->
+    <div class="mobile-filters" id="mobileFilters">
+        <div class="mobile-filters-content">
+            <div class="mobile-filters-header">
+                <h3>Filters</h3>
+                <button class="mobile-filters-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mobile-filters-body">
+                <!-- Filters content will be copied here for mobile -->
+            </div>
+            <div class="mobile-filters-footer">
+                <button class="btn btn-secondary" id="clearMobileFilters">Clear All</button>
+                <button class="btn btn-primary" id="applyMobileFilters">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Toast -->
+    <div class="cart-toast" id="cartToast">
+        <div class="toast-content">
+            <i class="fas fa-check-circle"></i>
+            <span>Product added to cart!</span>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script src="js/category.js"></script>
+</body>
+</html> 
