@@ -26,8 +26,8 @@ async function loadProductsFromAPI() {
         }
     } catch (error) {
         console.error('Failed to load products:', error);
-        // Fallback to static data
-        loadFallbackProducts();
+        // Don't load fallback products - just leave empty
+        products = {};
     }
 }
 
@@ -49,49 +49,6 @@ async function loadCategoriesFromAPI() {
             { _id: 'cooling', name: 'Cooling', slug: 'cooling' }
         ];
     }
-}
-
-// Fallback static data for offline mode
-function loadFallbackProducts() {
-    products = {
-        'rtx-4090': {
-            id: 'rtx-4090',
-            name: 'NVIDIA RTX 4090',
-            price: 1599.99,
-            image: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400',
-            category: 'graphics-cards',
-            inStock: true,
-            stock: 10
-        },
-        'i9-13900k': {
-            id: 'i9-13900k',
-            name: 'Intel Core i9-13900K',
-            price: 629.99,
-            originalPrice: 699.99,
-            image: 'https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=400',
-            category: 'processors',
-            inStock: true,
-            stock: 15
-        },
-        'asus-z790': {
-            id: 'asus-z790',
-            name: 'ASUS ROG Maximus Z790',
-            price: 449.99,
-            image: 'https://images.unsplash.com/photo-1562976540-906b13717cd1?w=400',
-            category: 'motherboards',
-            inStock: true,
-            stock: 8
-        },
-        'corsair-ddr5': {
-            id: 'corsair-ddr5',
-            name: 'Corsair Vengeance DDR5',
-            price: 199.99,
-            image: 'https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?w=400',
-            category: 'memory',
-            inStock: true,
-            stock: 25
-        }
-    };
 }
 
 // DOM Content Loaded
@@ -207,128 +164,211 @@ function initAuth() {
 function updateAuthUI() {
     const authButtons = document.querySelector('.auth-buttons');
     const userMenu = document.querySelector('.user-menu');
-    const userNameSpan = document.querySelector('.user-name');
-    const adminBtn = document.getElementById('adminBtn');
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
     
-    if (apiClient.isLoggedIn()) {
-        const user = apiClient.getCurrentUser();
-        
+    if (user) {
         if (authButtons) authButtons.style.display = 'none';
-        if (userMenu) userMenu.style.display = 'flex';
-        if (userNameSpan && user) {
-            userNameSpan.textContent = `${user.firstName} ${user.lastName}`;
-        }
-        
-        // Show admin button for admin users
-        if (adminBtn && user && user.role === 'admin') {
-            adminBtn.style.display = 'flex';
+        if (userMenu) {
+            userMenu.style.display = 'flex';
+            const userName = userMenu.querySelector('.user-name');
+            if (userName) {
+                userName.textContent = user.firstName || user.email;
+            }
         }
     } else {
         if (authButtons) authButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
-        if (adminBtn) adminBtn.style.display = 'none';
     }
 }
 
 async function handleLogout() {
     try {
         await apiClient.logout();
-        updateAuthUI();
-        // Redirect to home
-        window.location.href = 'index.html';
     } catch (error) {
-        console.error('Logout failed:', error);
+        console.error('Logout error:', error);
+    } finally {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        updateAuthUI();
+        showSuccessToast('Successfully logged out');
     }
 }
 
 // Load featured products for homepage
 async function loadFeaturedProducts() {
+    const container = document.getElementById('featuredProducts');
+    if (!container) return;
+
     try {
-        const productGrid = document.getElementById('featuredProductsGrid');
-        if (!productGrid) return;
-        
-        const response = await apiClient.getFeaturedProducts();
-        if (response.success && response.data.products && response.data.products.length > 0) {
-            productGrid.innerHTML = response.data.products.map(product => `
-                <div class="product-card" data-category="${product.category}">
-                    <div class="product-image">
-                        <img src="${product.images?.[0] || product.image || 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400'}" 
-                             alt="${product.name}" loading="lazy">
-                        <div class="product-badges">
-                            ${product.onSale ? '<span class="badge badge-sale">Sale</span>' : ''}
-                            ${product.featured && !product.onSale ? '<span class="badge badge-new">Featured</span>' : ''}
-                        </div>
-                        <button class="wishlist-btn" onclick="toggleWishlist('${product._id}', this)">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-name">${product.name}</h3>
-                        <div class="product-rating">
-                            <div class="stars">
-                                ${generateStarRating(4.5)}
-                            </div>
-                            <span class="rating-count">(${Math.floor(Math.random() * 200) + 50})</span>
-                        </div>
-                        <div class="product-price">
-                            ${product.originalPrice ? `<span class="original-price">$${product.originalPrice}</span>` : ''}
-                            <span class="current-price">$${product.price}</span>
-                        </div>
-                        <button class="btn btn-primary add-to-cart" onclick="addToCart('${product._id}')">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+        // Show loading state
+        container.innerHTML = `
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading featured products...</p>
+            </div>
+        `;
+
+        // Use the product manager if available, otherwise load directly
+        if (window.productManager) {
+            await window.productManager.loadProducts({ featured: true, limit: 8 });
         } else {
-            // Show empty state if no products
-            productGrid.innerHTML = `
-                <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
-                    <i class="fas fa-box-open" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-                    <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">No Products Available</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">Products are being loaded. Please check back soon!</p>
-                    <button class="btn btn-primary" onclick="window.location.href='admin.html'">
-                        <i class="fas fa-plus"></i> Add Products (Admin)
-                    </button>
-                </div>
-            `;
+            const response = await apiClient.getFeaturedProducts();
+            if (response.success && response.data) {
+                const products = response.data.products || response.data;
+                if (products.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            <h3>No Featured Products</h3>
+                            <p>We're working on adding featured products. Check back soon!</p>
+                            <a href="category.html" class="btn btn-primary">Browse All Products</a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = products.slice(0, 8).map(product => createProductCard(product)).join('');
+            } else {
+                throw new Error(response.message || 'Failed to load featured products');
+            }
         }
     } catch (error) {
         console.error('Failed to load featured products:', error);
-        const productGrid = document.getElementById('featuredProductsGrid');
-        if (productGrid) {
-            productGrid.innerHTML = `
-                <div class="error-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--accent-orange); margin-bottom: 1rem;"></i>
-                    <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">Failed to Load Products</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">Unable to connect to the server. Please try again.</p>
-                    <button class="btn btn-primary" onclick="loadFeaturedProducts()">
-                        <i class="fas fa-redo"></i> Retry
-                    </button>
-                </div>
-            `;
+        
+        // Show user-friendly error message
+        let errorMessage = 'Unable to load featured products at the moment.';
+        if (error.message.includes('Network') || error.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your connection.';
+        } else if (error.message.includes('404')) {
+            errorMessage = 'Featured products service is temporarily unavailable.';
         }
+        
+        container.innerHTML = `
+            <div class="error-state">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Unable to Load Products</h3>
+                <p>${errorMessage}</p>
+                <div class="error-actions">
+                    <button class="btn btn-primary" onclick="loadFeaturedProducts()">Try Again</button>
+                    <a href="category.html" class="btn btn-outline">Browse All Products</a>
+                </div>
+            </div>
+        `;
     }
 }
 
-// Helper function to generate star ratings
+function createProductCard(product) {
+    const isOnSale = product.originalPrice && product.originalPrice > product.price;
+    const discountPercent = isOnSale ? 
+        Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
+    
+    const productImage = getProductImage(product);
+    const productRating = calculateAverageRating(product.reviews);
+    
+    return `
+        <div class="product-card" data-product-id="${product._id || product.id}">
+            <div class="product-image-container">
+                <img src="${productImage}" 
+                     alt="${product.name}" 
+                     class="product-image"
+                     loading="lazy"
+                     onerror="this.src='https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400'">
+                
+                <div class="product-badges">
+                    ${product.isNew ? '<span class="badge badge-new">New</span>' : ''}
+                    ${isOnSale ? `<span class="badge badge-sale">${discountPercent}% Off</span>` : ''}
+                    ${product.isBestseller ? '<span class="badge badge-bestseller">Bestseller</span>' : ''}
+                </div>
+                
+                <button class="wishlist-btn" onclick="toggleWishlist('${product._id || product.id}', this)">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
+            
+            <div class="product-info">
+                <h3 class="product-name">
+                    <a href="product.html?id=${product._id || product.id}">${product.name}</a>
+                </h3>
+                
+                ${productRating > 0 ? `
+                    <div class="product-rating">
+                        ${generateStarRating(productRating)}
+                        <span class="rating-count">(${product.reviews?.length || 0})</span>
+                    </div>
+                ` : ''}
+                
+                <div class="product-price">
+                    <span class="current-price">$${product.price.toFixed(2)}</span>
+                    ${isOnSale ? `<span class="original-price">$${product.originalPrice.toFixed(2)}</span>` : ''}
+                </div>
+                
+                <div class="product-stock">
+                    ${product.stock > 0 ? 
+                        `<span class="in-stock">✓ In Stock</span>` :
+                        `<span class="out-of-stock">✗ Out of Stock</span>`
+                    }
+                </div>
+                
+                <button class="btn btn-primary add-to-cart-btn" 
+                        onclick="addToCart('${product._id || product.id}')"
+                        ${product.stock === 0 ? 'disabled' : ''}>
+                    <i class="fas fa-shopping-cart"></i>
+                    ${product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function getProductImage(product) {
+    if (product.images && product.images.length > 0) {
+        return product.images[0].url || product.images[0];
+    }
+    return product.image || getDefaultImage(product.category);
+}
+
+function getDefaultImage(category) {
+    const defaultImages = {
+        'graphics-cards': 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400',
+        'processors': 'https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=400',
+        'motherboards': 'https://images.unsplash.com/photo-1562976540-906b13717cd1?w=400',
+        'memory': 'https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?w=400',
+        'storage': 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400',
+        'cooling': 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?w=400'
+    };
+    return defaultImages[category] || 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400';
+}
+
+function calculateAverageRating(reviews) {
+    if (!reviews || reviews.length === 0) return 0;
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return total / reviews.length;
+}
+
 function generateStarRating(rating) {
     const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
+    const hasHalfStar = rating % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
     
     let stars = '';
+    
     for (let i = 0; i < fullStars; i++) {
         stars += '<i class="fas fa-star"></i>';
     }
+    
     if (hasHalfStar) {
         stars += '<i class="fas fa-star-half-alt"></i>';
     }
+    
     for (let i = 0; i < emptyStars; i++) {
         stars += '<i class="far fa-star"></i>';
     }
     
-    return stars;
+    return `<div class="stars">${stars}</div>`;
 }
 
 // Mobile Menu Functionality
@@ -336,39 +376,30 @@ function initMobileMenu() {
     const mobileToggle = document.querySelector('.mobile-menu-toggle');
     const mobileMenu = document.querySelector('.mobile-menu');
     const mobileClose = document.querySelector('.mobile-menu-close');
-    const mobileLinks = document.querySelectorAll('.mobile-nav-link');
     
-    if (mobileToggle) {
+    if (mobileToggle && mobileMenu) {
         mobileToggle.addEventListener('click', () => {
             mobileMenu.classList.add('active');
             document.body.style.overflow = 'hidden';
         });
     }
     
-    if (mobileClose) {
+    if (mobileClose && mobileMenu) {
         mobileClose.addEventListener('click', () => {
             mobileMenu.classList.remove('active');
             document.body.style.overflow = '';
         });
     }
     
-    // Close menu when clicking on links
-    mobileLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            mobileMenu.classList.remove('active');
-            document.body.style.overflow = '';
+    // Close mobile menu when clicking outside
+    if (mobileMenu) {
+        mobileMenu.addEventListener('click', (e) => {
+            if (e.target === mobileMenu) {
+                mobileMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
         });
-    });
-    
-    // Close menu when clicking outside
-    document.addEventListener('click', (e) => {
-        if (mobileMenu.classList.contains('active') && 
-            !mobileMenu.contains(e.target) && 
-            !mobileToggle.contains(e.target)) {
-            mobileMenu.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    });
+    }
 }
 
 // Search Functionality
@@ -378,126 +409,83 @@ function initSearch() {
     const searchSuggestions = document.getElementById('searchSuggestions');
     
     if (searchInput) {
-        let searchTimeout;
-        
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
+        searchInput.addEventListener('input', debounce(async (e) => {
             const query = e.target.value.trim();
-            
-            if (query.length > 0) {
-                searchTimeout = setTimeout(() => {
-                    showSearchSuggestions(query);
-                }, 300);
+            if (query.length > 2) {
+                await showSearchSuggestions(query);
             } else {
                 hideSearchSuggestions();
             }
-        });
+        }, 300));
         
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                performSearch(searchInput.value);
-            }
-        });
-        
-        searchInput.addEventListener('focus', () => {
-            if (searchInput.value.trim().length > 0) {
-                showSearchSuggestions(searchInput.value);
-            }
-        });
-        
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.search-container')) {
-                hideSearchSuggestions();
+                performSearch(e.target.value);
             }
         });
     }
     
     if (searchBtn) {
         searchBtn.addEventListener('click', () => {
-            performSearch(searchInput.value);
+            const query = searchInput ? searchInput.value : '';
+            performSearch(query);
         });
     }
+    
+    // Close suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container')) {
+            hideSearchSuggestions();
+        }
+    });
 }
 
 async function showSearchSuggestions(query) {
-    const suggestions = document.getElementById('searchSuggestions');
-    if (!suggestions) return;
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    if (!searchSuggestions) return;
     
     try {
-        // Try to get suggestions from API
-        const response = await apiClient.getSearchSuggestions(query);
-        
-        if (response.success && response.data.length > 0) {
-            suggestions.innerHTML = response.data.map(product => `
-                <div class="search-suggestion" onclick="goToProduct('${product._id}')">
-                    <img src="${product.images?.[0] || product.image}" alt="${product.name}">
-                    <div>
-                        <div class="suggestion-name">${product.name}</div>
-                        <div class="suggestion-price">$${product.price}</div>
-                    </div>
-                </div>
-            `).join('');
-            
-            suggestions.style.display = 'block';
-        } else {
-            // Fallback to local search
-            const filteredProducts = Object.values(products).filter(product =>
-                product.name.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            if (filteredProducts.length > 0) {
-                suggestions.innerHTML = filteredProducts.map(product => `
-                    <div class="search-suggestion" onclick="goToProduct('${product.id}')">
-                        <img src="${product.image}" alt="${product.name}">
-                        <div>
+        const response = await apiClient.searchProducts(query);
+        if (response.success && response.data && response.data.length > 0) {
+            const suggestions = response.data.slice(0, 5).map(product => {
+                const productImage = getProductImage(product);
+                return `
+                    <div class="search-suggestion" onclick="goToProduct('${product._id || product.id}')">
+                        <img src="${productImage}" alt="${product.name}" class="suggestion-image">
+                        <div class="suggestion-content">
                             <div class="suggestion-name">${product.name}</div>
-                            <div class="suggestion-price">$${product.price}</div>
+                            <div class="suggestion-price">$${product.price.toFixed(2)}</div>
                         </div>
                     </div>
-                `).join('');
-                
-                suggestions.style.display = 'block';
-            } else {
-                suggestions.innerHTML = '<div class="no-suggestions">No products found</div>';
-                suggestions.style.display = 'block';
-            }
+                `;
+            }).join('');
+            
+            searchSuggestions.innerHTML = suggestions;
+            searchSuggestions.style.display = 'block';
+        } else {
+            searchSuggestions.innerHTML = `
+                <div class="no-suggestions">
+                    <p>No products found for "${query}"</p>
+                </div>
+            `;
+            searchSuggestions.style.display = 'block';
         }
     } catch (error) {
-        console.error('Search suggestions failed:', error);
-        // Fallback to local search
-        const filteredProducts = Object.values(products).filter(product =>
-            product.name.toLowerCase().includes(query.toLowerCase())
-        );
-        
-        if (filteredProducts.length > 0) {
-            suggestions.innerHTML = filteredProducts.map(product => `
-                <div class="search-suggestion" onclick="goToProduct('${product.id}')">
-                    <img src="${product.image}" alt="${product.name}">
-                    <div>
-                        <div class="suggestion-name">${product.name}</div>
-                        <div class="suggestion-price">$${product.price}</div>
-                    </div>
-                </div>
-            `).join('');
-            
-            suggestions.style.display = 'block';
-        } else {
-            suggestions.innerHTML = '<div class="no-suggestions">No products found</div>';
-            suggestions.style.display = 'block';
-        }
+        console.error('Search suggestions error:', error);
+        hideSearchSuggestions();
     }
 }
 
 function hideSearchSuggestions() {
-    const suggestions = document.getElementById('searchSuggestions');
-    if (suggestions) {
-        suggestions.style.display = 'none';
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    if (searchSuggestions) {
+        searchSuggestions.style.display = 'none';
     }
 }
 
 function performSearch(query) {
     if (query.trim()) {
-        window.location.href = `category.html?search=${encodeURIComponent(query)}`;
+        window.location.href = `category.html?search=${encodeURIComponent(query.trim())}`;
     }
 }
 
@@ -507,105 +495,71 @@ function goToProduct(productId) {
 
 // Cart Functionality
 function initCart() {
-    // Sync cart with backend if logged in
-    syncCartWithBackend();
+    // Cart functionality is now handled by the API
+    // This is kept for backward compatibility
 }
 
 async function syncCartWithBackend() {
-    if (apiClient.isLoggedIn()) {
-        try {
-            const response = await apiClient.getCart();
-            if (response.success) {
-                cart = response.data.items.map(item => ({
-                    productId: item.product._id,
-                    quantity: item.quantity,
-                    product: item.product
-                }));
-                updateCartStorage();
-                updateCartCount();
-            }
-        } catch (error) {
-            console.error('Failed to sync cart:', error);
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        const response = await apiClient.getCart();
+        if (response.success) {
+            // Update local cart with backend data
+            cart = response.data.items || [];
+            updateCartStorage();
+            updateCartCount();
         }
+    } catch (error) {
+        console.error('Cart sync error:', error);
     }
 }
 
 async function addToCart(productId, quantity = 1) {
+    if (!window.authManager || !window.authManager.requireAuth()) return;
+    
     try {
-        if (apiClient.isLoggedIn()) {
-            // Add to backend cart
-            const response = await apiClient.addToCart(productId, quantity);
-            if (response.success) {
-                // Update local cart from backend response
-                await syncCartWithBackend();
-                showCartToast();
-                return;
-            }
-        }
-        
-        // Fallback to local cart
-        const existingItem = cart.find(item => item.productId === productId);
-        
-        if (existingItem) {
-            existingItem.quantity += quantity;
+        const response = await apiClient.addToCart(productId, quantity);
+        if (response.success) {
+            showCartToast();
+            updateCartCount();
         } else {
-            const product = products[productId];
-            if (product) {
-                cart.push({
-                    productId: productId,
-                    quantity: quantity,
-                    product: product
-                });
-            }
+            throw new Error(response.message || 'Failed to add to cart');
         }
-        
-        updateCartStorage();
-        updateCartCount();
-        showCartToast();
     } catch (error) {
-        console.error('Failed to add to cart:', error);
-        showErrorToast('Failed to add item to cart');
+        console.error('Add to cart error:', error);
+        showErrorToast('Failed to add product to cart');
     }
 }
 
 async function removeFromCart(productId) {
     try {
-        if (apiClient.isLoggedIn()) {
-            await apiClient.removeFromCart(productId);
-            await syncCartWithBackend();
-            return;
+        const response = await apiClient.removeFromCart(productId);
+        if (response.success) {
+            updateCartCount();
+            showSuccessToast('Product removed from cart');
         }
-        
-        // Fallback to local cart
-        cart = cart.filter(item => item.productId !== productId);
-        updateCartStorage();
-        updateCartCount();
     } catch (error) {
-        console.error('Failed to remove from cart:', error);
+        console.error('Remove from cart error:', error);
+        showErrorToast('Failed to remove product from cart');
     }
 }
 
 async function updateCartQuantity(productId, quantity) {
+    if (quantity <= 0) {
+        await removeFromCart(productId);
+        return;
+    }
+    
     try {
-        if (quantity <= 0) {
-            return removeFromCart(productId);
-        }
-        
-        if (apiClient.isLoggedIn()) {
-            await apiClient.updateCartItem(productId, quantity);
-            await syncCartWithBackend();
-            return;
-        }
-        
-        // Fallback to local cart
-        const item = cart.find(item => item.productId === productId);
-        if (item) {
-            item.quantity = quantity;
-            updateCartStorage();
+        const response = await apiClient.updateCartQuantity(productId, quantity);
+        if (response.success) {
             updateCartCount();
         }
     } catch (error) {
-        console.error('Failed to update cart:', error);
+        console.error('Update cart quantity error:', error);
+        showErrorToast('Failed to update cart');
     }
 }
 
@@ -615,372 +569,225 @@ function updateCartStorage() {
 
 function updateCartCount() {
     const cartCount = document.getElementById('cartCount');
-    if (cartCount) {
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        cartCount.textContent = totalItems;
-        cartCount.style.display = totalItems > 0 ? 'block' : 'none';
+    if (!cartCount) return;
+    
+    if (window.authManager && window.authManager.isLoggedIn()) {
+        apiClient.getCart().then(response => {
+            if (response.success) {
+                const totalItems = response.data.items.reduce((sum, item) => sum + item.quantity, 0);
+                cartCount.textContent = totalItems;
+            }
+        }).catch(console.error);
+    } else {
+        cartCount.textContent = '0';
     }
 }
 
 function showCartToast() {
-    const toast = document.createElement('div');
-    toast.className = 'cart-toast';
-    toast.innerHTML = `
-        <i class="fas fa-check-circle"></i>
-        <span>Item added to cart!</span>
-    `;
-    
-    // Add styles
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--neon-green);
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        color: var(--neon-green);
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        z-index: 10000;
-        animation: slideInRight 0.3s ease, slideOutRight 0.3s ease 2.7s;
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
+    showSuccessToast('Product added to cart!');
 }
 
 function showErrorToast(message) {
     const toast = document.createElement('div');
-    toast.className = 'error-toast';
+    toast.className = 'toast error-toast';
     toast.innerHTML = `
-        <i class="fas fa-exclamation-circle"></i>
-        <span>${message}</span>
-    `;
-    
-    // Add styles
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        border: 1px solid #ff4757;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        color: #ff4757;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        z-index: 10000;
-        animation: slideInRight 0.3s ease, slideOutRight 0.3s ease 2.7s;
+        <div class="toast-content">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>${message}</span>
+        </div>
     `;
     
     document.body.appendChild(toast);
     
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+    
+    // Remove after 3 seconds
     setTimeout(() => {
-        toast.remove();
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 300);
     }, 3000);
 }
 
 function showSuccessToast(message) {
     const toast = document.createElement('div');
-    toast.className = 'success-toast';
+    toast.className = 'toast success-toast';
     toast.innerHTML = `
-        <i class="fas fa-check-circle"></i>
-        <span>${message}</span>
-    `;
-    
-    // Add styles
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--neon-green);
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        color: var(--neon-green);
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        z-index: 10000;
-        animation: slideInRight 0.3s ease, slideOutRight 0.3s ease 2.7s;
+        <div class="toast-content">
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        </div>
     `;
     
     document.body.appendChild(toast);
     
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+    
+    // Remove after 3 seconds
     setTimeout(() => {
-        toast.remove();
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 300);
     }, 3000);
 }
 
 // Login modal functionality
 function showLoginModal() {
-    const modal = document.createElement('div');
-    modal.className = 'auth-modal';
-    modal.innerHTML = `
-        <div class="modal-overlay" onclick="closeAuthModal()"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Login to TechCore</h2>
-                <button class="modal-close" onclick="closeAuthModal()">&times;</button>
-            </div>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="loginEmail">Email Address</label>
-                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Login
-                </button>
-                <p class="auth-switch">
-                    Don't have an account? <a href="#" onclick="switchToRegister()">Register here</a>
-                </p>
-            </form>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Handle form submission
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    
-    // Focus on email input
-    setTimeout(() => {
-        document.getElementById('loginEmail').focus();
-    }, 100);
+    if (window.authManager) {
+        window.authManager.showLoginModal();
+    }
 }
 
 // Register modal functionality
 function showRegisterModal() {
-    const modal = document.createElement('div');
-    modal.className = 'auth-modal';
-    modal.innerHTML = `
-        <div class="modal-overlay" onclick="closeAuthModal()"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Join TechCore</h2>
-                <button class="modal-close" onclick="closeAuthModal()">&times;</button>
-            </div>
-            <form id="registerForm">
-                <div class="form-group">
-                    <label for="registerFirstName">First Name</label>
-                    <input type="text" id="registerFirstName" placeholder="Enter your first name" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerLastName">Last Name</label>
-                    <input type="text" id="registerLastName" placeholder="Enter your last name" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerEmail">Email Address</label>
-                    <input type="email" id="registerEmail" placeholder="Enter your email" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerPassword">Password</label>
-                    <input type="password" id="registerPassword" placeholder="Create a password (min 8 characters)" required minlength="8">
-                </div>
-                <div class="form-group">
-                    <label for="registerConfirmPassword">Confirm Password</label>
-                    <input type="password" id="registerConfirmPassword" placeholder="Confirm your password" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                    <i class="fas fa-user-plus"></i>
-                    Create Account
-                </button>
-                <p class="auth-switch">
-                    Already have an account? <a href="#" onclick="switchToLogin()">Login here</a>
-                </p>
-            </form>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Handle form submission
-    document.getElementById('registerForm').addEventListener('submit', handleRegister);
-    
-    // Focus on first name input
-    setTimeout(() => {
-        document.getElementById('registerFirstName').focus();
-    }, 100);
+    if (window.authManager) {
+        window.authManager.showRegisterModal();
+    }
 }
 
 async function handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    
-    // Disable button and show loading
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+    const formData = new FormData(e.target);
+    const loginData = {
+        email: formData.get('email'),
+        password: formData.get('password')
+    };
     
     try {
-        const response = await apiClient.login(email, password);
-        
+        const response = await apiClient.login(loginData.email, loginData.password);
         if (response.success) {
-            showSuccessToast('Welcome back! Login successful.');
-            closeAuthModal();
+            localStorage.setItem('authToken', response.token);
+            localStorage.setItem('user', JSON.stringify(response.user));
             updateAuthUI();
+            closeAuthModal();
+            showSuccessToast('Successfully logged in!');
             await syncCartWithBackend();
         } else {
-            showErrorToast(response.message || 'Login failed');
+            throw new Error(response.message || 'Login failed');
         }
     } catch (error) {
-        showErrorToast('Login failed. Please check your credentials.');
         console.error('Login error:', error);
-    } finally {
-        // Re-enable button
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+        showErrorToast(error.message || 'Login failed');
     }
 }
 
 async function handleRegister(e) {
     e.preventDefault();
     
-    const firstName = document.getElementById('registerFirstName').value;
-    const lastName = document.getElementById('registerLastName').value;
-    const email = document.getElementById('registerEmail').value;
-    const password = document.getElementById('registerPassword').value;
-    const confirmPassword = document.getElementById('registerConfirmPassword').value;
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const formData = new FormData(e.target);
+    const registerData = {
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        confirmPassword: formData.get('confirmPassword')
+    };
     
-    // Validate passwords match
-    if (password !== confirmPassword) {
+    if (registerData.password !== registerData.confirmPassword) {
         showErrorToast('Passwords do not match');
         return;
     }
     
-    // Disable button and show loading
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-    
     try {
-        const response = await apiClient.register({
-            firstName,
-            lastName,
-            email,
-            password
-        });
-        
+        const response = await apiClient.register(registerData);
         if (response.success) {
-            showSuccessToast(`Welcome ${firstName}! Account created successfully.`);
-            closeAuthModal();
+            localStorage.setItem('authToken', response.token);
+            localStorage.setItem('user', JSON.stringify(response.user));
             updateAuthUI();
-            await syncCartWithBackend();
+            closeAuthModal();
+            showSuccessToast('Account created successfully!');
         } else {
-            showErrorToast(response.message || 'Registration failed');
+            throw new Error(response.message || 'Registration failed');
         }
     } catch (error) {
-        showErrorToast('Registration failed. Please try again.');
         console.error('Registration error:', error);
-    } finally {
-        // Re-enable button
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+        showErrorToast(error.message || 'Registration failed');
     }
 }
 
 function switchToRegister() {
     closeAuthModal();
-    setTimeout(showRegisterModal, 100);
+    showRegisterModal();
 }
 
 function switchToLogin() {
     closeAuthModal();
-    setTimeout(showLoginModal, 100);
+    showLoginModal();
 }
 
 function closeAuthModal() {
     const modal = document.querySelector('.auth-modal');
     if (modal) {
-        modal.style.animation = 'modalSlideOut 0.3s ease';
-        setTimeout(() => modal.remove(), 300);
+        modal.remove();
     }
 }
 
 // Category Navigation
 function initCategoryNavigation() {
-    const categoryCards = document.querySelectorAll('.category-card');
-    
-    categoryCards.forEach(card => {
-        card.addEventListener('click', () => {
-            const category = card.getAttribute('data-category');
-            if (category) {
-                window.location.href = `category.html?cat=${category}`;
-            }
-        });
-    });
-    
-    // Hero buttons
-    const heroButtons = document.querySelectorAll('.hero-buttons .btn');
-    heroButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            if (button.textContent.includes('Shop Now')) {
-                e.preventDefault();
-                window.location.href = 'category.html';
-            } else if (button.textContent.includes('Browse Categories')) {
-                e.preventDefault();
-                document.querySelector('.featured-categories').scrollIntoView({
-                    behavior: 'smooth'
-                });
-            }
-        });
-    });
+    // Load categories into navigation dropdown
+    const categoriesDropdown = document.getElementById('categoriesDropdown');
+    if (categoriesDropdown && categories.length > 0) {
+        categoriesDropdown.innerHTML = categories.map(category => `
+            <a href="category.html?cat=${category.slug}" class="dropdown-item">
+                <i class="fas fa-${getCategoryIcon(category.slug)}"></i>
+                ${category.name}
+            </a>
+        `).join('');
+    }
+}
+
+function getCategoryIcon(slug) {
+    const icons = {
+        'graphics-cards': 'tv',
+        'processors': 'microchip',
+        'motherboards': 'memory',
+        'memory': 'save',
+        'storage': 'hdd',
+        'cooling': 'fan'
+    };
+    return icons[slug] || 'cog';
 }
 
 // Wishlist Functionality
 function initWishlist() {
-    const wishlistButtons = document.querySelectorAll('.wishlist-btn');
-    
-    wishlistButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const productCard = button.closest('.product-card');
-            const productId = productCard.querySelector('.add-to-cart').getAttribute('data-product-id');
-            
-            toggleWishlist(productId, button);
-        });
-    });
+    // Wishlist functionality is now handled by the API
+    updateWishlistCount();
 }
 
-function toggleWishlist(productId, button) {
-    const product = products[productId];
-    if (!product) return;
+async function toggleWishlist(productId, button) {
+    if (!window.authManager || !window.authManager.requireAuth()) return;
     
-    const existingIndex = wishlist.findIndex(item => item.id === productId);
-    
-    if (existingIndex > -1) {
-        wishlist.splice(existingIndex, 1);
-        button.classList.remove('active');
-        button.style.color = 'var(--text-secondary)';
-    } else {
-        wishlist.push(product);
-        button.classList.add('active');
-        button.style.color = 'var(--accent-orange)';
+    try {
+        const isInWishlist = button.classList.contains('active');
+        
+        if (isInWishlist) {
+            await apiClient.removeFromWishlist(productId);
+            button.classList.remove('active');
+            showSuccessToast('Removed from wishlist');
+        } else {
+            await apiClient.addToWishlist(productId);
+            button.classList.add('active');
+            showSuccessToast('Added to wishlist');
+        }
+        
+        updateWishlistCount();
+    } catch (error) {
+        console.error('Wishlist error:', error);
+        showErrorToast('Failed to update wishlist');
     }
-    
-    updateWishlistStorage();
-    updateWishlistCount();
 }
 
 function updateWishlistStorage() {
@@ -989,33 +796,39 @@ function updateWishlistStorage() {
 
 function updateWishlistCount() {
     const wishlistCount = document.getElementById('wishlistCount');
-    if (wishlistCount) {
-        wishlistCount.textContent = wishlist.length;
-        wishlistCount.style.display = wishlist.length > 0 ? 'block' : 'none';
+    if (!wishlistCount) return;
+    
+    if (window.authManager && window.authManager.isLoggedIn()) {
+        apiClient.getWishlist().then(response => {
+            if (response.success) {
+                wishlistCount.textContent = response.data.length;
+            }
+        }).catch(console.error);
+    } else {
+        wishlistCount.textContent = '0';
     }
 }
 
 // Newsletter Functionality
 function initNewsletter() {
-    const newsletterForm = document.querySelector('.newsletter-form');
-    const newsletterInput = document.querySelector('.newsletter-input');
-    const newsletterBtn = newsletterForm?.querySelector('.btn');
-    
+    const newsletterForm = document.getElementById('newsletterForm');
     if (newsletterForm) {
-        newsletterForm.addEventListener('submit', (e) => {
+        newsletterForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = newsletterInput.value.trim();
             
-            if (email && isValidEmail(email)) {
-                // Simulate newsletter signup
-                newsletterBtn.textContent = 'Subscribed!';
-                newsletterBtn.style.background = 'var(--neon-green)';
-                newsletterInput.value = '';
-                
-                setTimeout(() => {
-                    newsletterBtn.textContent = 'Subscribe';
-                    newsletterBtn.style.background = '';
-                }, 2000);
+            const email = e.target.querySelector('input[type="email"]').value;
+            
+            if (!isValidEmail(email)) {
+                showErrorToast('Please enter a valid email address');
+                return;
+            }
+            
+            try {
+                // Here you would typically send to your newsletter service
+                showSuccessToast('Successfully subscribed to newsletter!');
+                e.target.reset();
+            } catch (error) {
+                showErrorToast('Failed to subscribe. Please try again.');
             }
         });
     }
@@ -1028,16 +841,13 @@ function isValidEmail(email) {
 
 // Smooth Scrolling
 function initSmoothScrolling() {
-    const links = document.querySelectorAll('a[href^="#"]');
-    
-    links.forEach(link => {
-        link.addEventListener('click', (e) => {
+    // Add smooth scrolling to all anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
             e.preventDefault();
-            const targetId = link.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            
-            if (targetElement) {
-                targetElement.scrollIntoView({
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
                 });
@@ -1048,7 +858,7 @@ function initSmoothScrolling() {
 
 // Animations
 function initAnimations() {
-    // Intersection Observer for fade-in animations
+    // Intersection Observer for animations
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -1057,34 +867,18 @@ function initAnimations() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
+                entry.target.classList.add('animate-in');
             }
         });
     }, observerOptions);
     
-    // Animate sections on scroll
-    const animatedElements = document.querySelectorAll('.category-card, .product-card, .trust-item');
-    
-    animatedElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    // Observe elements with animation classes
+    document.querySelectorAll('.fade-in, .slide-up, .scale-in').forEach(el => {
         observer.observe(el);
-    });
-    
-    // Parallax effect for hero background
-    window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        const heroBackground = document.querySelector('.hero-bg-animation');
-        
-        if (heroBackground) {
-            heroBackground.style.transform = `translateY(${scrolled * 0.5}px)`;
-        }
     });
 }
 
-// Utility Functions
+// Utility functions
 function formatPrice(price) {
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -1104,19 +898,17 @@ function debounce(func, wait) {
     };
 }
 
-// URL Parameters Helper
 function getURLParameter(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
 }
 
-// Local Storage Helper
 function getFromStorage(key, defaultValue = null) {
     try {
         const item = localStorage.getItem(key);
         return item ? JSON.parse(item) : defaultValue;
     } catch (error) {
-        console.error('Error reading from localStorage:', error);
+        console.error(`Error reading from localStorage: ${key}`, error);
         return defaultValue;
     }
 }
@@ -1125,11 +917,10 @@ function setToStorage(key, value) {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
-        console.error('Error writing to localStorage:', error);
+        console.error(`Error writing to localStorage: ${key}`, error);
     }
 }
 
-// Performance optimization
 function throttle(func, limit) {
     let inThrottle;
     return function() {
@@ -1140,7 +931,7 @@ function throttle(func, limit) {
             inThrottle = true;
             setTimeout(() => inThrottle = false, limit);
         }
-    }
+    };
 }
 
 // CSS for search suggestions

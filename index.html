@@ -7,6 +7,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
     <!-- Header & Navigation -->
@@ -17,59 +18,36 @@
                 <span>TechCore</span>
             </div>
             
-            <div class="search-container">
-                <input type="text" placeholder="Search for components..." class="search-input" id="searchInput">
-                <button class="search-btn"><i class="fas fa-search"></i></button>
-                <div class="search-suggestions" id="searchSuggestions"></div>
-            </div>
-            
-            <div class="nav-links">
-                <div class="nav-item dropdown">
-                    <a href="#" class="nav-link">Components <i class="fas fa-chevron-down"></i></a>
-                    <div class="dropdown-menu">
-                        <a href="category.html?cat=graphics-cards" class="dropdown-item">
-                            <i class="fas fa-tv"></i> Graphics Cards
-                        </a>
-                        <a href="category.html?cat=processors" class="dropdown-item">
-                            <i class="fas fa-microchip"></i> Processors
-                        </a>
-                        <a href="category.html?cat=motherboards" class="dropdown-item">
-                            <i class="fas fa-memory"></i> Motherboards
-                        </a>
-                        <a href="category.html?cat=memory" class="dropdown-item">
-                            <i class="fas fa-save"></i> Memory (RAM)
-                        </a>
-                        <a href="category.html?cat=storage" class="dropdown-item">
-                            <i class="fas fa-hdd"></i> Storage
-                        </a>
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search products...">
+                    <button class="search-btn" id="searchBtn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-suggestions" id="searchSuggestions"></div>
+                </div>
+                
+                <div class="nav-actions">
+                    <div class="auth-buttons">
+                        <button class="btn btn-outline" id="loginBtn">Login</button>
+                        <button class="btn btn-primary" id="registerBtn">Register</button>
                     </div>
-                </div>
-                <a href="category.html?cat=laptops" class="nav-link">Laptops</a>
-                <a href="category.html?cat=accessories" class="nav-link">Accessories</a>
-                <a href="#deals" class="nav-link">Deals</a>
-                <a href="support.html" class="nav-link">Support</a>
-            </div>
-            
-            <div class="nav-actions">
-                <div class="auth-buttons">
-                    <button class="btn btn-outline" id="loginBtn">Login</button>
-                    <button class="btn btn-primary" id="registerBtn">Register</button>
-                </div>
-                <div class="user-menu" style="display: none;">
-                    <span class="user-name">User</span>
-                    <a href="admin.html" class="btn btn-secondary" id="adminBtn" style="display: none;">
-                        <i class="fas fa-shield-alt"></i> Admin
+                    <div class="user-menu" style="display: none;">
+                        <span class="user-name">User</span>
+                        <a href="admin.html" class="btn btn-secondary" id="adminBtn" style="display: none;">
+                            <i class="fas fa-shield-alt"></i> Admin
+                        </a>
+                        <button class="btn btn-outline" id="logoutBtn">Logout</button>
+                    </div>
+                    <a href="wishlist.html" class="nav-action">
+                        <i class="fas fa-heart"></i>
+                        <span class="badge" id="wishlistCount">0</span>
                     </a>
-                    <button class="btn btn-outline" id="logoutBtn">Logout</button>
+                    <a href="cart.html" class="nav-action cart-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="badge" id="cartCount">0</span>
+                    </a>
                 </div>
-                <a href="wishlist.html" class="nav-action">
-                    <i class="fas fa-heart"></i>
-                    <span class="badge" id="wishlistCount">0</span>
-                </a>
-                <a href="cart.html" class="nav-action cart-icon">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="badge" id="cartCount">0</span>
-                </a>
             </div>
             
             <div class="mobile-menu-toggle">
@@ -91,8 +69,8 @@
                 <p class="hero-subtitle">Your One-Stop Tech Shop for PC Components</p>
                 <p class="hero-description">Discover cutting-edge hardware and components to build the ultimate gaming rig or workstation.</p>
                 <div class="hero-buttons">
-                    <button class="btn btn-primary">Shop Now</button>
-                    <button class="btn btn-secondary">Browse Categories</button>
+                    <button class="btn btn-primary" onclick="window.location.href='category.html'">Shop Now</button>
+                    <button class="btn btn-secondary" onclick="document.querySelector('.featured-categories').scrollIntoView({behavior: 'smooth'})">Browse Categories</button>
                 </div>
             </div>
             <div class="hero-visual">
@@ -141,72 +119,8 @@
     <section class="featured-categories">
         <div class="container">
             <h2 class="section-title">Shop by Category</h2>
-            <div class="category-grid">
-                <div class="category-card" data-category="graphics-cards">
-                    <div class="category-icon">
-                        <i class="fas fa-tv"></i>
-                    </div>
-                    <h3>Graphics Cards</h3>
-                    <p>High-performance GPUs for gaming and content creation</p>
-                    <div class="category-overlay">
-                        <button class="btn btn-primary">Explore</button>
-                    </div>
-                </div>
-                
-                <div class="category-card" data-category="processors">
-                    <div class="category-icon">
-                        <i class="fas fa-microchip"></i>
-                    </div>
-                    <h3>Processors</h3>
-                    <p>Latest CPUs from Intel and AMD</p>
-                    <div class="category-overlay">
-                        <button class="btn btn-primary">Explore</button>
-                    </div>
-                </div>
-                
-                <div class="category-card" data-category="motherboards">
-                    <div class="category-icon">
-                        <i class="fas fa-memory"></i>
-                    </div>
-                    <h3>Motherboards</h3>
-                    <p>Reliable boards for every build</p>
-                    <div class="category-overlay">
-                        <button class="btn btn-primary">Explore</button>
-                    </div>
-                </div>
-                
-                <div class="category-card" data-category="memory">
-                    <div class="category-icon">
-                        <i class="fas fa-save"></i>
-                    </div>
-                    <h3>Memory (RAM)</h3>
-                    <p>Fast DDR4 and DDR5 memory modules</p>
-                    <div class="category-overlay">
-                        <button class="btn btn-primary">Explore</button>
-                    </div>
-                </div>
-                
-                <div class="category-card" data-category="storage">
-                    <div class="category-icon">
-                        <i class="fas fa-hdd"></i>
-                    </div>
-                    <h3>Storage</h3>
-                    <p>SSDs and HDDs for all your data needs</p>
-                    <div class="category-overlay">
-                        <button class="btn btn-primary">Explore</button>
-                    </div>
-                </div>
-                
-                <div class="category-card" data-category="accessories">
-                    <div class="category-icon">
-                        <i class="fas fa-keyboard"></i>
-                    </div>
-                    <h3>Accessories</h3>
-                    <p>Gaming peripherals and more</p>
-                    <div class="category-overlay">
-                        <button class="btn btn-primary">Explore</button>
-                    </div>
-                </div>
+            <div class="category-grid" id="categoryGrid">
+                <!-- Categories will be loaded dynamically -->
             </div>
         </div>
     </section>
@@ -214,12 +128,17 @@
     <!-- Featured Products -->
     <section class="featured-products">
         <div class="container">
-            <h2 class="section-title">Featured Products</h2>
-            <div class="product-carousel" id="featuredProductsGrid">
-                <div class="loading-state">
-                    <div class="spinner"></div>
-                    <p>Loading featured products...</p>
-                </div>
+            <div class="section-header">
+                <h2 class="section-title">Featured Products</h2>
+                <p class="section-subtitle">Discover our handpicked selection of premium components</p>
+            </div>
+            
+            <div class="products-grid" id="featuredProducts">
+                <!-- Products will be loaded dynamically -->
+            </div>
+            
+            <div class="section-footer">
+                <a href="category.html" class="btn btn-outline">View All Products</a>
             </div>
         </div>
     </section>
@@ -229,13 +148,13 @@
         <div class="container">
             <div class="newsletter-content">
                 <div class="newsletter-text">
-                    <h3>Stay Updated</h3>
+                    <h2>Stay Updated</h2>
                     <p>Get the latest tech news and exclusive deals delivered to your inbox</p>
                 </div>
-                <div class="newsletter-form">
-                    <input type="email" placeholder="Enter your email" class="newsletter-input">
-                    <button class="btn btn-primary">Subscribe</button>
-                </div>
+                <form class="newsletter-form" id="newsletterForm">
+                    <input type="email" placeholder="Enter your email" class="newsletter-input" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
             </div>
         </div>
     </section>
@@ -251,21 +170,17 @@
                     </div>
                     <p>Your trusted partner for premium PC components and tech solutions.</p>
                     <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                     </div>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
-                    <ul>
-                        <li><a href="category.html?cat=graphics-cards">Graphics Cards</a></li>
-                        <li><a href="category.html?cat=processors">Processors</a></li>
-                        <li><a href="category.html?cat=motherboards">Motherboards</a></li>
-                        <li><a href="category.html?cat=memory">Memory</a></li>
-                        <li><a href="category.html?cat=storage">Storage</a></li>
+                    <ul id="footerCategories">
+                        <!-- Categories will be loaded dynamically -->
                     </ul>
                 </div>
                 
@@ -294,11 +209,11 @@
             
             <div class="footer-bottom">
                 <div class="payment-methods">
-                    <i class="fab fa-cc-visa"></i>
-                    <i class="fab fa-cc-mastercard"></i>
-                    <i class="fab fa-cc-amex"></i>
-                    <i class="fab fa-paypal"></i>
-                    <i class="fab fa-apple-pay"></i>
+                    <i class="fab fa-cc-visa" title="Visa"></i>
+                    <i class="fab fa-cc-mastercard" title="Mastercard"></i>
+                    <i class="fab fa-cc-amex" title="American Express"></i>
+                    <i class="fab fa-paypal" title="PayPal"></i>
+                    <i class="fab fa-apple-pay" title="Apple Pay"></i>
                 </div>
                 <p>&copy; 2024 TechCore. All rights reserved.</p>
             </div>
@@ -318,25 +233,312 @@
                 </button>
             </div>
             <nav class="mobile-nav">
-                <a href="#" class="mobile-nav-link">Components</a>
+                <a href="index.html" class="mobile-nav-link">Home</a>
+                <a href="category.html" class="mobile-nav-link">Components</a>
                 <a href="category.html?cat=laptops" class="mobile-nav-link">Laptops</a>
                 <a href="category.html?cat=accessories" class="mobile-nav-link">Accessories</a>
                 <a href="#deals" class="mobile-nav-link">Deals</a>
                 <a href="support.html" class="mobile-nav-link">Support</a>
-                <a href="account.html" class="mobile-nav-link">My Account</a>
+                <div class="mobile-auth-section">
+                    <div class="mobile-auth-buttons">
+                        <button class="btn btn-outline" id="mobileLoginBtn">Login</button>
+                        <button class="btn btn-primary" id="mobileRegisterBtn">Register</button>
+                    </div>
+                    <div class="mobile-user-menu" style="display: none;">
+                        <span class="mobile-user-name">User</span>
+                        <a href="admin.html" class="btn btn-secondary mobile-admin-btn" style="display: none;">Admin</a>
+                        <button class="btn btn-outline" id="mobileLogoutBtn">Logout</button>
+                    </div>
+                </div>
             </nav>
         </div>
     </div>
 
-    <!-- Cart Toast -->
-    <div class="cart-toast" id="cartToast">
-        <div class="toast-content">
-            <i class="fas fa-check-circle"></i>
-            <span>Product added to cart!</span>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading TechCore...</p>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="js/api-client.js"></script>
-    <script src="js/script.js"></script>
+    <script src="js/auth-manager.js"></script>
+    <script src="js/product-manager.js"></script>
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                showLoading();
+                
+                // Initialize managers
+                await Promise.all([
+                    window.authManager.init(),
+                    window.productManager.init()
+                ]);
+                
+                // Load homepage content
+                await loadHomepageContent();
+                
+                // Initialize other features
+                initMobileMenu();
+                initSearch();
+                initNewsletter();
+                
+                hideLoading();
+            } catch (error) {
+                console.error('App initialization error:', error);
+                hideLoading();
+            }
+        });
+
+        async function loadHomepageContent() {
+            // Load categories
+            await loadCategories();
+            
+            // Load featured products
+            await loadFeaturedProducts();
+        }
+
+        async function loadCategories() {
+            try {
+                const categories = window.productManager.categories;
+                
+                // Load navigation dropdown
+                const categoriesDropdown = document.getElementById('categoriesDropdown');
+                if (categoriesDropdown && categories.length > 0) {
+                    categoriesDropdown.innerHTML = categories.map(category => `
+                        <a href="category.html?cat=${category.slug}" class="dropdown-item">
+                            <i class="fas fa-${getCategoryIcon(category.slug)}"></i> ${category.name}
+                        </a>
+                    `).join('');
+                }
+                
+                // Load category grid
+                const categoryGrid = document.getElementById('categoryGrid');
+                if (categoryGrid && categories.length > 0) {
+                    categoryGrid.innerHTML = categories.slice(0, 6).map(category => `
+                        <div class="category-card" data-category="${category.slug}" onclick="window.location.href='category.html?cat=${category.slug}'">
+                            <div class="category-icon">
+                                <i class="fas fa-${getCategoryIcon(category.slug)}"></i>
+                            </div>
+                            <h3>${category.name}</h3>
+                            <p>${category.description || getDefaultDescription(category.slug)}</p>
+                            <div class="category-overlay">
+                                <button class="btn btn-primary">Explore</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                // Load footer categories
+                const footerCategories = document.getElementById('footerCategories');
+                if (footerCategories && categories.length > 0) {
+                    footerCategories.innerHTML = categories.map(category => `
+                        <li><a href="category.html?cat=${category.slug}">${category.name}</a></li>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load categories:', error);
+            }
+        }
+
+        async function loadFeaturedProducts() {
+            try {
+                await window.productManager.loadProducts({ featured: true, limit: 8 });
+            } catch (error) {
+                console.error('Failed to load featured products:', error);
+            }
+        }
+
+        function getCategoryIcon(slug) {
+            const icons = {
+                'graphics-cards': 'tv',
+                'processors': 'microchip',
+                'motherboards': 'memory',
+                'memory': 'save',
+                'storage': 'hdd',
+                'cooling': 'fan',
+                'laptops': 'laptop',
+                'accessories': 'keyboard'
+            };
+            return icons[slug] || 'cog';
+        }
+
+        function getDefaultDescription(slug) {
+            const descriptions = {
+                'graphics-cards': 'High-performance GPUs for gaming and content creation',
+                'processors': 'Latest CPUs from Intel and AMD',
+                'motherboards': 'Reliable boards for every build',
+                'memory': 'Fast DDR4 and DDR5 memory modules',
+                'storage': 'SSDs and HDDs for all your data needs',
+                'cooling': 'Keep your system running cool and quiet'
+            };
+            return descriptions[slug] || 'Premium components for your build';
+        }
+
+        function initMobileMenu() {
+            const mobileToggle = document.querySelector('.mobile-menu-toggle');
+            const mobileMenu = document.querySelector('.mobile-menu');
+            const mobileClose = document.querySelector('.mobile-menu-close');
+            
+            if (mobileToggle && mobileMenu) {
+                mobileToggle.addEventListener('click', () => {
+                    mobileMenu.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+            
+            if (mobileClose && mobileMenu) {
+                mobileClose.addEventListener('click', () => {
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
+            
+            // Sync mobile auth buttons with main auth system
+            const mobileLoginBtn = document.getElementById('mobileLoginBtn');
+            const mobileRegisterBtn = document.getElementById('mobileRegisterBtn');
+            const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+            
+            if (mobileLoginBtn) {
+                mobileLoginBtn.addEventListener('click', () => window.authManager.showLoginModal());
+            }
+            if (mobileRegisterBtn) {
+                mobileRegisterBtn.addEventListener('click', () => window.authManager.showRegisterModal());
+            }
+            if (mobileLogoutBtn) {
+                mobileLogoutBtn.addEventListener('click', () => window.authManager.logout());
+            }
+            
+            // Update mobile menu auth state
+            window.authManager.onAuthChange((user) => {
+                const mobileAuthButtons = document.querySelector('.mobile-auth-buttons');
+                const mobileUserMenu = document.querySelector('.mobile-user-menu');
+                const mobileAdminBtn = document.querySelector('.mobile-admin-btn');
+                
+                if (user) {
+                    if (mobileAuthButtons) mobileAuthButtons.style.display = 'none';
+                    if (mobileUserMenu) {
+                        mobileUserMenu.style.display = 'block';
+                        const userName = mobileUserMenu.querySelector('.mobile-user-name');
+                        if (userName) userName.textContent = user.firstName || user.email;
+                    }
+                    if (mobileAdminBtn && user.role === 'admin') {
+                        mobileAdminBtn.style.display = 'inline-flex';
+                    }
+                } else {
+                    if (mobileAuthButtons) mobileAuthButtons.style.display = 'flex';
+                    if (mobileUserMenu) mobileUserMenu.style.display = 'none';
+                    if (mobileAdminBtn) mobileAdminBtn.style.display = 'none';
+                }
+            });
+        }
+
+        function initSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.querySelector('.search-btn');
+            
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+                
+                searchInput.addEventListener('input', debounce(handleSearchInput, 300));
+            }
+            
+            if (searchBtn) {
+                searchBtn.addEventListener('click', performSearch);
+            }
+        }
+
+        function handleSearchInput(e) {
+            const query = e.target.value.trim();
+            if (query.length > 2) {
+                showSearchSuggestions(query);
+            } else {
+                hideSearchSuggestions();
+            }
+        }
+
+        async function showSearchSuggestions(query) {
+            try {
+                const response = await window.apiClient.searchProducts(query);
+                const suggestions = document.getElementById('searchSuggestions');
+                
+                if (suggestions && response.success && response.data.length > 0) {
+                    suggestions.innerHTML = response.data.slice(0, 5).map(product => `
+                        <div class="search-suggestion-item" onclick="window.location.href='product.html?id=${product._id}'">
+                            <img src="${window.productManager.getProductImage(product)}" alt="${product.name}">
+                            <div class="suggestion-info">
+                                <span class="suggestion-name">${product.name}</span>
+                                <span class="suggestion-price">$${product.price.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    suggestions.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Search suggestions error:', error);
+            }
+        }
+
+        function hideSearchSuggestions() {
+            const suggestions = document.getElementById('searchSuggestions');
+            if (suggestions) {
+                suggestions.style.display = 'none';
+            }
+        }
+
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query) {
+                window.location.href = `category.html?search=${encodeURIComponent(query)}`;
+            }
+        }
+
+        function initNewsletter() {
+            const newsletterForm = document.getElementById('newsletterForm');
+            if (newsletterForm) {
+                newsletterForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = e.target.querySelector('input[type="email"]').value;
+                    
+                    try {
+                        // Here you would typically send to your newsletter service
+                        window.authManager.showSuccessToast('Successfully subscribed to newsletter!');
+                        e.target.reset();
+                    } catch (error) {
+                        window.authManager.showErrorToast('Failed to subscribe. Please try again.');
+                    }
+                });
+            }
+        }
+
+        function showLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
 </body>
 </html> 

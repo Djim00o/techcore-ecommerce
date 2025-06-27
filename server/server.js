@@ -70,10 +70,6 @@ const swaggerOptions = {
             {
                 url: process.env.API_BASE_URL || 'http://localhost:5234',
                 description: 'Development server'
-            },
-            {
-                url: 'https://api.techcore.com',
-                description: 'Production server'
             }
         ],
         components: {
@@ -91,7 +87,7 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-// Security middleware
+// Enhanced Security middleware
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -99,18 +95,26 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
             imgSrc: ["'self'", "data:", "https:", "http:"],
-            scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://js.stripe.com"],
-            connectSrc: ["'self'", "https://api.stripe.com"],
-            frameSrc: ["'self'", "https://js.stripe.com"]
+            scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+            connectSrc: ["'self'"],
+            frameSrc: ["'none'"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            childSrc: ["'none'"]
         }
     },
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    }
 }));
 
-// Rate limiting
+// Strict Rate limiting
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
     message: {
         success: false,
         message: 'Too many requests from this IP, please try again later.'
@@ -118,7 +122,6 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-        // Skip rate limiting for static files and health checks
         return req.url.startsWith('/static') || req.url === '/health';
     }
 });
@@ -126,7 +129,7 @@ const limiter = rateLimit({
 // API-specific rate limiter (more restrictive)
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === 'production' ? 50 : 500,
+    max: process.env.NODE_ENV === 'production' ? 50 : 200,
     message: {
         error: 'Too many API requests, please try again later.'
     }
@@ -135,7 +138,7 @@ const apiLimiter = rateLimit({
 // Auth-specific rate limiter (most restrictive)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === 'production' ? 5 : 1000, // Much higher limit for development
+    max: process.env.NODE_ENV === 'production' ? 5 : 50,
     message: {
         error: 'Too many authentication attempts, please try again later.'
     },
@@ -144,58 +147,62 @@ const authLimiter = rateLimit({
 
 app.use('/api/', limiter);
 
-// CORS configuration
+// Secure CORS configuration
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
-            process.env.FRONTEND_URL || 'http://localhost:3000',
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://localhost:5500', // For Live Server
-            'http://127.0.0.1:5500',
-            'http://localhost:8080', // For Python HTTP server
-            'http://127.0.0.1:8080',
-            'http://[::1]:8080' // IPv6 localhost
-        ];
+            process.env.FRONTEND_URL,
+            'http://localhost:8080',
+            'http://127.0.0.1:8080'
+        ].filter(Boolean);
         
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
+        // In production, be strict about origins
+        if (process.env.NODE_ENV === 'production') {
+            if (!origin || !allowedOrigins.includes(origin)) {
+                return callback(new Error('Not allowed by CORS'));
+            }
+        }
         
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        // In development, allow configured origins
+        if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             console.log('CORS blocked origin:', origin);
-            callback(null, true); // Temporarily allow all origins for development
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body parsing middleware with size limits
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(cookieParser());
 
 // Compression
 app.use(compression());
 
-// Session configuration
+// Secure session configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret',
+    secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/techcore'
+        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/techcore_ecommerce',
+        touchAfter: 24 * 3600 // lazy session update
     }),
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+    },
+    name: 'techcore.sid' // Change default session name
 }));
 
 // Custom middleware
@@ -212,42 +219,50 @@ app.get('/health', (req, res) => {
     });
 });
 
-// API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    explorer: true,
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'TechCore API Documentation'
-}));
+// API Documentation - only in development
+if (process.env.NODE_ENV !== 'production') {
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+        explorer: true,
+        customCss: '.swagger-ui .topbar { display: none }',
+        customSiteTitle: 'TechCore API Documentation'
+    }));
 
-// Serve swagger spec as JSON
-app.get('/api-docs.json', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
-});
+    // Serve swagger spec as JSON
+    app.get('/api-docs.json', (req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(swaggerSpec);
+    });
+}
 
-// API Routes
+// API Routes with proper rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', apiLimiter, productRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/orders', apiLimiter, orderRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/categories', apiLimiter, categoryRoutes);
+app.use('/api/reviews', apiLimiter, reviewRoutes);
+app.use('/api/cart', apiLimiter, cartRoutes);
+app.use('/api/wishlist', apiLimiter, wishlistRoutes);
 app.use('/api/payment', apiLimiter, paymentRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/upload', apiLimiter, uploadRoutes);
+app.use('/api/search', apiLimiter, searchRoutes);
+app.use('/api/analytics', apiLimiter, analyticsRoutes);
 
-// Static file serving (for uploaded images, etc.)
-app.use('/uploads', express.static('uploads'));
+// Static file serving with security headers
+app.use('/uploads', express.static('uploads', {
+    maxAge: '1d',
+    setHeaders: (res, path) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+}));
 
 // Root endpoint
 app.get('/', (req, res) => {
     res.json({
         message: 'Welcome to TechCore API',
         version: '1.0.0',
-        documentation: '/api-docs',
+        documentation: process.env.NODE_ENV !== 'production' ? '/api-docs' : null,
         health: '/health',
         endpoints: {
             auth: '/api/auth',
@@ -274,8 +289,7 @@ app.all('/api/*', (req, res) => {
             'GET /api/products',
             'GET /api/categories',
             'POST /api/auth/login',
-            'POST /api/auth/register',
-            'GET /api-docs'
+            'POST /api/auth/register'
         ]
     });
 });
@@ -312,7 +326,9 @@ async function startServer() {
         // Start HTTP server
         const server = app.listen(PORT, HOST, () => {
             console.log(`🚀 TechCore API Server running on http://${HOST}:${PORT}`);
-            console.log(`📚 API Documentation: http://${HOST}:${PORT}/api-docs`);
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(`📚 API Documentation: http://${HOST}:${PORT}/api-docs`);
+            }
             console.log(`🏥 Health Check: http://${HOST}:${PORT}/health`);
             console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
         });

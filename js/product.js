@@ -1,29 +1,27 @@
 // Product Detail Page JavaScript
 class ProductDetail {
     constructor() {
+        this.apiClient = window.apiClient || new APIClient();
         this.currentProduct = null;
         this.currentImageIndex = 0;
         this.zoomLevel = 1;
         this.reviewRating = 0;
+        this.quantity = 1;
         this.init();
     }
 
     async init() {
         try {
-            // Load content manager
-            await window.contentManager.loadContent();
-            
             // Get product ID from URL
             const urlParams = new URLSearchParams(window.location.search);
             const productId = urlParams.get('id') || urlParams.get('slug');
             
-            if (productId) {
-                await this.loadProduct(productId);
-            } else {
-                this.showError('Product not found');
+            if (!productId) {
+                this.showError('Product ID not found in URL');
                 return;
             }
             
+            await this.loadProduct(productId);
             this.initializeEventListeners();
             this.initializeTabs();
             this.loadRecentlyViewed();
@@ -36,132 +34,29 @@ class ProductDetail {
 
     async loadProduct(productId) {
         try {
-            // Show loading state
             this.showLoadingState();
             
-            // In a real app, this would be an API call
-            // For demo purposes, we'll simulate product data
-            const product = await this.fetchProductData(productId);
+            const response = await this.apiClient.getProduct(productId);
             
-            if (!product) {
-                throw new Error('Product not found');
+            if (!response.success || !response.data) {
+                throw new Error(response.message || 'Product not found');
             }
             
-            this.currentProduct = product;
-            this.renderProduct(product);
-            this.updateBreadcrumbs(product);
-            this.loadRelatedProducts(product.category);
+            this.currentProduct = response.data;
+            this.renderProduct(this.currentProduct);
+            this.updateBreadcrumbs(this.currentProduct);
+            this.loadRelatedProducts(this.currentProduct.category);
             
             // Track product view
-            this.trackProductView(product.id);
+            this.trackProductView(this.currentProduct._id || this.currentProduct.id);
+            
+            this.hideLoadingState();
             
         } catch (error) {
             console.error('Error loading product:', error);
-            this.showError('Failed to load product details');
+            this.hideLoadingState();
+            this.showError('Failed to load product details. Product may not exist.');
         }
-    }
-
-    async fetchProductData(productId) {
-        // Simulate API call - in real app, this would fetch from your backend
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Mock product data
-                const mockProduct = {
-                    id: productId,
-                    name: 'NVIDIA GeForce RTX 4080 Gaming Graphics Card',
-                    slug: 'nvidia-rtx-4080-gaming',
-                    brand: 'NVIDIA',
-                    sku: 'RTX4080-16G-GAMING',
-                    category: 'graphics-cards',
-                    price: 1199.99,
-                    originalPrice: 1399.99,
-                    currency: 'USD',
-                    stock: 15,
-                    availability: 'in-stock',
-                    description: 'Experience unmatched gaming performance with the NVIDIA GeForce RTX 4080. Built with the ultra-efficient NVIDIA Ada Lovelace architecture, this graphics card delivers exceptional ray tracing and AI-powered DLSS 3 performance.',
-                    shortDescription: 'High-performance gaming graphics card with ray tracing and DLSS 3 support.',
-                    images: [
-                        {
-                            url: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                            alt: 'NVIDIA RTX 4080 Main View',
-                            isPrimary: true
-                        },
-                        {
-                            url: 'https://images.unsplash.com/photo-1555617778-02518db02b80?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                            alt: 'NVIDIA RTX 4080 Side View'
-                        },
-                        {
-                            url: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                            alt: 'NVIDIA RTX 4080 Back View'
-                        }
-                    ],
-                    specifications: [
-                        { name: 'GPU Architecture', value: 'NVIDIA Ada Lovelace' },
-                        { name: 'Memory Size', value: '16GB GDDR6X' },
-                        { name: 'Memory Interface', value: '256-bit' },
-                        { name: 'Base Clock', value: '2205 MHz' },
-                        { name: 'Boost Clock', value: '2505 MHz' },
-                        { name: 'CUDA Cores', value: '9728' },
-                        { name: 'Ray Tracing Cores', value: '76 (3rd Gen)' },
-                        { name: 'Tensor Cores', value: '304 (4th Gen)' },
-                        { name: 'Power Consumption', value: '320W' },
-                        { name: 'Recommended PSU', value: '750W' },
-                        { name: 'Display Outputs', value: '3x DisplayPort 1.4a, 1x HDMI 2.1' },
-                        { name: 'Max Resolution', value: '7680x4320 @ 60Hz' }
-                    ],
-                    features: [
-                        'NVIDIA DLSS 3 with Frame Generation',
-                        'Real-time Ray Tracing',
-                        'NVIDIA Reflex Low Latency',
-                        'NVIDIA Broadcast AI Audio & Video',
-                        'PCIe 4.0 Support',
-                        'DirectX 12 Ultimate'
-                    ],
-                    rating: {
-                        average: 4.6,
-                        count: 247,
-                        distribution: {
-                            five: 156,
-                            four: 67,
-                            three: 18,
-                            two: 4,
-                            one: 2
-                        }
-                    },
-                    reviews: [
-                        {
-                            id: 1,
-                            user: { name: 'Alex Chen', verified: true },
-                            rating: 5,
-                            title: 'Incredible performance for 4K gaming',
-                            comment: 'This card handles everything I throw at it at 4K resolution. Ray tracing looks amazing and DLSS 3 gives a huge performance boost.',
-                            date: '2024-01-15',
-                            helpful: 23
-                        },
-                        {
-                            id: 2,
-                            user: { name: 'Sarah Miller', verified: true },
-                            rating: 4,
-                            title: 'Great card but runs hot',
-                            comment: 'Performance is excellent but make sure you have good case ventilation. The card can get quite warm under load.',
-                            date: '2024-01-10',
-                            helpful: 15
-                        }
-                    ],
-                    warranty: {
-                        period: 3,
-                        unit: 'years',
-                        description: '3-year manufacturer warranty with free technical support'
-                    },
-                    isNew: false,
-                    isFeatured: true,
-                    isBestseller: true,
-                    isOnSale: true
-                };
-                
-                resolve(mockProduct);
-            }, 500);
-        });
     }
 
     renderProduct(product) {
@@ -169,19 +64,20 @@ class ProductDetail {
         document.title = `${product.name} - TechCore`;
         
         // Render product images
-        this.renderProductImages(product.images);
+        this.renderProductImages(product.images || []);
         
         // Render product info
         this.renderProductInfo(product);
         
         // Render specifications
-        this.renderSpecifications(product.specifications);
+        if (product.specifications) {
+            this.renderSpecifications(product.specifications);
+        }
         
         // Render reviews
-        this.renderReviews(product.reviews, product.rating);
-        
-        // Hide loading state
-        this.hideLoadingState();
+        if (product.reviews) {
+            this.renderReviews(product.reviews, product.rating);
+        }
     }
 
     renderProductImages(images) {
@@ -192,189 +88,246 @@ class ProductDetail {
         if (images && images.length > 0) {
             // Set main image
             const primaryImage = images.find(img => img.isPrimary) || images[0];
-            mainImage.src = primaryImage.url;
-            mainImage.alt = primaryImage.alt;
+            const imageUrl = primaryImage.url || primaryImage;
+            
+            if (mainImage) {
+                mainImage.src = imageUrl;
+                mainImage.alt = primaryImage.alt || this.currentProduct.name;
+            }
             
             // Clear and populate thumbnails
-            thumbnailContainer.innerHTML = '';
-            images.forEach((image, index) => {
-                const thumbnail = document.createElement('div');
-                thumbnail.className = `thumbnail-image ${index === 0 ? 'active' : ''}`;
-                thumbnail.innerHTML = `<img src="${image.url}" alt="${image.alt}">`;
-                thumbnail.addEventListener('click', () => this.changeMainImage(index));
-                thumbnailContainer.appendChild(thumbnail);
-            });
-            
-            // Add product badges
+            if (thumbnailContainer) {
+                thumbnailContainer.innerHTML = '';
+                images.forEach((image, index) => {
+                    const imageUrl = image.url || image;
+                    const thumbnail = document.createElement('img');
+                    thumbnail.src = imageUrl;
+                    thumbnail.alt = image.alt || `${this.currentProduct.name} view ${index + 1}`;
+                    thumbnail.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+                    thumbnail.addEventListener('click', () => this.changeMainImage(index));
+                    thumbnailContainer.appendChild(thumbnail);
+                });
+            }
+        } else {
+            // Use default image
+            const defaultImage = this.getDefaultImage(this.currentProduct.category);
+            if (mainImage) {
+                mainImage.src = defaultImage;
+                mainImage.alt = this.currentProduct.name;
+            }
+        }
+        
+        // Render product badges
+        if (badges) {
             this.renderProductBadges(badges);
         }
     }
 
+    getDefaultImage(category) {
+        const defaultImages = {
+            'graphics-cards': 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=800',
+            'processors': 'https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=800',
+            'motherboards': 'https://images.unsplash.com/photo-1562976540-906b13717cd1?w=800',
+            'memory': 'https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?w=800',
+            'storage': 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800',
+            'cooling': 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?w=800'
+        };
+        return defaultImages[category] || 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=800';
+    }
+
     renderProductBadges(container) {
-        const product = this.currentProduct;
-        let badgesHTML = '';
+        const badges = [];
         
-        if (product.isNew) {
-            badgesHTML += '<span class="badge badge-new">New</span>';
-        }
-        if (product.isBestseller) {
-            badgesHTML += '<span class="badge badge-bestseller">Bestseller</span>';
-        }
-        if (product.isOnSale) {
-            badgesHTML += '<span class="badge badge-sale">Sale</span>';
-        }
-        if (product.stock <= 5) {
-            badgesHTML += '<span class="badge badge-low-stock">Low Stock</span>';
+        if (this.currentProduct.isNew) {
+            badges.push('<span class="product-badge badge-new">New</span>');
         }
         
-        container.innerHTML = badgesHTML;
+        if (this.currentProduct.originalPrice && this.currentProduct.originalPrice > this.currentProduct.price) {
+            const discount = Math.round(((this.currentProduct.originalPrice - this.currentProduct.price) / this.currentProduct.originalPrice) * 100);
+            badges.push(`<span class="product-badge badge-sale">${discount}% Off</span>`);
+        }
+        
+        if (this.currentProduct.isFeatured) {
+            badges.push('<span class="product-badge badge-featured">Featured</span>');
+        }
+        
+        if (this.currentProduct.isBestseller) {
+            badges.push('<span class="product-badge badge-bestseller">Bestseller</span>');
+        }
+        
+        container.innerHTML = badges.join('');
     }
 
     renderProductInfo(product) {
-        // Basic info
-        document.getElementById('productTitle').textContent = product.name;
-        document.getElementById('productSku').textContent = product.sku;
-        document.getElementById('productBrand').textContent = product.brand;
-        document.getElementById('productDescription').textContent = product.description;
+        // Product name
+        const productName = document.getElementById('productName');
+        if (productName) productName.textContent = product.name;
         
-        // Price
-        document.getElementById('currentPrice').textContent = this.formatPrice(product.price, product.currency);
+        // Product brand
+        const productBrand = document.getElementById('productBrand');
+        if (productBrand) productBrand.textContent = product.brand || '';
         
-        if (product.originalPrice && product.originalPrice > product.price) {
-            const originalPriceEl = document.getElementById('originalPrice');
-            const discountBadge = document.getElementById('discountBadge');
+        // Product SKU
+        const productSku = document.getElementById('productSku');
+        if (productSku) productSku.textContent = product.sku || product._id;
+        
+        // Product rating
+        const ratingContainer = document.getElementById('productRating');
+        if (ratingContainer && product.rating) {
+            this.renderRating(ratingContainer, product.rating);
+        }
+        
+        // Product price
+        const priceContainer = document.getElementById('productPrice');
+        if (priceContainer) {
+            const isOnSale = product.originalPrice && product.originalPrice > product.price;
+            let priceHTML = `<span class="current-price">${this.formatPrice(product.price)}</span>`;
             
-            originalPriceEl.textContent = this.formatPrice(product.originalPrice, product.currency);
-            originalPriceEl.style.display = 'inline';
+            if (isOnSale) {
+                priceHTML += `<span class="original-price">${this.formatPrice(product.originalPrice)}</span>`;
+                const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+                priceHTML += `<span class="discount-badge">${discount}% Off</span>`;
+            }
             
-            const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
-            discountBadge.textContent = `${discount}% OFF`;
-            discountBadge.style.display = 'inline';
+            priceContainer.innerHTML = priceHTML;
         }
         
-        // Availability
-        const availabilityEl = document.getElementById('availability');
-        if (product.stock > 0) {
-            availabilityEl.textContent = 'In Stock';
-            availabilityEl.className = 'availability in-stock';
-        } else {
-            availabilityEl.textContent = 'Out of Stock';
-            availabilityEl.className = 'availability out-of-stock';
+        // Product availability
+        const availabilityContainer = document.getElementById('productAvailability');
+        if (availabilityContainer) {
+            const inStock = product.stock > 0;
+            availabilityContainer.innerHTML = `
+                <span class="availability-status ${inStock ? 'in-stock' : 'out-of-stock'}">
+                    <i class="fas fa-${inStock ? 'check' : 'times'}"></i>
+                    ${inStock ? `In Stock (${product.stock} available)` : 'Out of Stock'}
+                </span>
+            `;
         }
         
-        // Rating
-        this.renderRating(document.getElementById('productStars'), product.rating.average);
-        const ratingText = document.getElementById('ratingText');
-        if (product.rating.count > 0) {
-            ratingText.textContent = `${product.rating.average.toFixed(1)} (${product.rating.count} reviews)`;
-        } else {
-            ratingText.textContent = 'No reviews yet';
+        // Product description
+        const descriptionContainer = document.getElementById('productDescription');
+        if (descriptionContainer) {
+            descriptionContainer.innerHTML = product.description || product.shortDescription || '';
         }
         
-        // Features
-        this.renderFeatures(product.features);
-        
-        // Warranty
-        if (product.warranty) {
-            document.getElementById('warrantyInfo').textContent = product.warranty.description;
+        // Product features
+        if (product.features) {
+            this.renderFeatures(product.features);
         }
         
-        // Update quantity input max
-        const quantityInput = document.getElementById('quantityInput');
-        quantityInput.max = Math.min(product.stock, 10);
+        // Update quantity controls
+        this.updateQuantityControls(product.stock);
         
-        // Enable/disable add to cart based on stock
-        const addToCartBtn = document.getElementById('addToCartBtn');
-        if (product.stock === 0) {
-            addToCartBtn.disabled = true;
-            addToCartBtn.innerHTML = '<i class="fas fa-times"></i> Out of Stock';
-        }
+        // Update add to cart button
+        this.updateAddToCartButton(product.stock > 0);
     }
 
     renderFeatures(features) {
-        const featureList = document.getElementById('featureList');
-        if (features && features.length > 0) {
-            featureList.innerHTML = features.map(feature => 
-                `<div class="feature-item">${feature}</div>`
+        const featuresContainer = document.getElementById('productFeatures');
+        if (featuresContainer && features.length > 0) {
+            const featuresHTML = features.map(feature => 
+                `<li><i class="fas fa-check"></i> ${feature}</li>`
             ).join('');
+            featuresContainer.innerHTML = `<ul class="features-list">${featuresHTML}</ul>`;
         }
     }
 
     renderSpecifications(specifications) {
-        const specsGrid = document.getElementById('specificationsGrid');
-        if (specifications && specifications.length > 0) {
-            specsGrid.innerHTML = specifications.map(spec => `
-                <div class="spec-item">
-                    <span class="spec-name">${spec.name}</span>
-                    <span class="spec-value">${spec.value}</span>
-                </div>
-            `).join('');
+        const specsContainer = document.getElementById('productSpecifications');
+        if (specsContainer && specifications.length > 0) {
+            const specsHTML = specifications.map(spec => 
+                `<tr>
+                    <td class="spec-name">${spec.name}</td>
+                    <td class="spec-value">${spec.value}</td>
+                </tr>`
+            ).join('');
+            specsContainer.innerHTML = `
+                <table class="specifications-table">
+                    <tbody>${specsHTML}</tbody>
+                </table>
+            `;
         }
     }
 
     renderReviews(reviews, rating) {
-        // Overall rating
-        document.getElementById('overallRating').textContent = rating.average.toFixed(1);
-        this.renderRating(document.getElementById('overallStars'), rating.average);
-        document.getElementById('totalReviews').textContent = `${rating.count} reviews`;
+        const reviewsContainer = document.getElementById('productReviews');
+        const ratingBreakdown = document.getElementById('ratingBreakdown');
         
-        // Rating breakdown
-        this.renderRatingBreakdown(rating.distribution, rating.count);
+        if (!reviewsContainer) return;
         
-        // Individual reviews
-        const reviewsList = document.getElementById('reviewsList');
-        if (reviews && reviews.length > 0) {
-            reviewsList.innerHTML = reviews.map(review => this.createReviewHTML(review)).join('');
-        } else {
-            reviewsList.innerHTML = '<p class="no-reviews">No reviews yet. Be the first to review this product!</p>';
+        if (reviews.length === 0) {
+            reviewsContainer.innerHTML = `
+                <div class="no-reviews">
+                    <p>No reviews yet. Be the first to review this product!</p>
+                    <button class="btn btn-primary" onclick="productDetail.openReviewModal()">
+                        Write a Review
+                    </button>
+                </div>
+            `;
+            return;
         }
+        
+        // Render rating breakdown
+        if (ratingBreakdown && rating) {
+            this.renderRatingBreakdown(rating.distribution, rating.count);
+        }
+        
+        // Render individual reviews
+        const reviewsHTML = reviews.map(review => this.createReviewHTML(review)).join('');
+        reviewsContainer.innerHTML = `
+            <div class="reviews-header">
+                <h3>Customer Reviews (${reviews.length})</h3>
+                <button class="btn btn-outline" onclick="productDetail.openReviewModal()">
+                    Write a Review
+                </button>
+            </div>
+            <div class="reviews-list">${reviewsHTML}</div>
+        `;
     }
 
     renderRatingBreakdown(distribution, totalCount) {
-        const breakdown = document.getElementById('ratingBreakdown');
-        const ratings = ['five', 'four', 'three', 'two', 'one'];
+        if (!distribution) return '';
         
-        breakdown.innerHTML = ratings.map((rating, index) => {
-            const count = distribution[rating] || 0;
-            const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
-            const stars = 5 - index;
-            
-            return `
-                <div class="rating-row">
-                    <span class="rating-label">${stars} ★</span>
-                    <div class="rating-bar">
-                        <div class="rating-fill" style="width: ${percentage}%"></div>
+        const breakdown = Object.entries(distribution)
+            .sort(([a], [b]) => b - a)
+            .map(([stars, count]) => {
+                const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
+                return `
+                    <div class="rating-row">
+                        <span class="stars-label">${stars} star${stars !== '1' ? 's' : ''}</span>
+                        <div class="rating-bar">
+                            <div class="rating-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <span class="rating-count">${count}</span>
                     </div>
-                    <span class="rating-count">${count}</span>
-                </div>
-            `;
-        }).join('');
+                `;
+            }).join('');
+        
+        return `<div class="rating-breakdown">${breakdown}</div>`;
     }
 
     createReviewHTML(review) {
-        const reviewDate = new Date(review.date).toLocaleDateString();
-        const initials = review.user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+        const reviewDate = new Date(review.date || review.createdAt).toLocaleDateString();
+        const stars = this.generateStarsHTML(review.rating);
         
         return `
             <div class="review-item">
                 <div class="review-header">
-                    <div class="reviewer-avatar">${initials}</div>
                     <div class="reviewer-info">
-                        <div class="reviewer-name">${review.user.name}</div>
-                        <div class="review-date">${reviewDate}</div>
+                        <span class="reviewer-name">${review.user?.name || 'Anonymous'}</span>
+                        ${review.user?.verified ? '<span class="verified-badge">Verified Purchase</span>' : ''}
                     </div>
-                    <div class="review-rating">
-                        ${this.generateStarsHTML(review.rating)}
-                        ${review.user.verified ? '<span class="verified-badge">Verified</span>' : ''}
+                    <div class="review-meta">
+                        <div class="review-rating">${stars}</div>
+                        <span class="review-date">${reviewDate}</span>
                     </div>
                 </div>
-                <div class="review-content">
-                    <div class="review-title">${review.title}</div>
-                    <div class="review-comment">${review.comment}</div>
-                </div>
+                ${review.title ? `<h4 class="review-title">${review.title}</h4>` : ''}
+                <p class="review-comment">${review.comment}</p>
                 <div class="review-actions">
-                    <button class="helpful-btn" onclick="productDetail.markHelpful(${review.id})">
-                        <i class="fas fa-thumbs-up"></i> Helpful (${review.helpful})
+                    <button class="helpful-btn" onclick="productDetail.markHelpful('${review.id || review._id}')">
+                        <i class="fas fa-thumbs-up"></i>
+                        Helpful (${review.helpful || 0})
                     </button>
                 </div>
             </div>
@@ -382,55 +335,55 @@ class ProductDetail {
     }
 
     renderRating(container, rating) {
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
-        let starsHTML = '';
+        const averageRating = typeof rating === 'object' ? rating.average : rating;
+        const reviewCount = typeof rating === 'object' ? rating.count : 0;
         
-        for (let i = 0; i < 5; i++) {
-            if (i < fullStars) {
-                starsHTML += '<i class="fas fa-star"></i>';
-            } else if (i === fullStars && hasHalfStar) {
-                starsHTML += '<i class="fas fa-star-half-alt"></i>';
-            } else {
-                starsHTML += '<i class="far fa-star"></i>';
-            }
+        if (averageRating > 0) {
+            const stars = this.generateStarsHTML(averageRating);
+            container.innerHTML = `
+                <div class="product-rating">
+                    <div class="stars">${stars}</div>
+                    <span class="rating-text">${averageRating.toFixed(1)} out of 5</span>
+                    ${reviewCount > 0 ? `<span class="review-count">(${reviewCount} reviews)</span>` : ''}
+                </div>
+            `;
         }
-        
-        container.innerHTML = starsHTML;
     }
 
     generateStarsHTML(rating) {
-        let starsHTML = '';
-        for (let i = 1; i <= 5; i++) {
-            if (i <= rating) {
-                starsHTML += '<i class="fas fa-star"></i>';
-            } else {
-                starsHTML += '<i class="far fa-star"></i>';
-            }
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+        
+        let stars = '';
+        
+        for (let i = 0; i < fullStars; i++) {
+            stars += '<i class="fas fa-star"></i>';
         }
-        return starsHTML;
+        
+        if (hasHalfStar) {
+            stars += '<i class="fas fa-star-half-alt"></i>';
+        }
+        
+        for (let i = 0; i < emptyStars; i++) {
+            stars += '<i class="far fa-star"></i>';
+        }
+        
+        return stars;
     }
 
     updateBreadcrumbs(product) {
-        const breadcrumb = document.getElementById('productBreadcrumb');
-        const breadcrumbNav = document.getElementById('breadcrumbNav');
-        
-        if (breadcrumb) {
-            breadcrumb.textContent = product.name;
+        const breadcrumbs = document.getElementById('breadcrumbs');
+        if (breadcrumbs) {
+            const categoryName = this.getCategoryDisplayName(product.category);
+            breadcrumbs.innerHTML = `
+                <a href="index.html">Home</a>
+                <i class="fas fa-chevron-right"></i>
+                <a href="category.html?cat=${product.category}">${categoryName}</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>${product.name}</span>
+            `;
         }
-        
-        // Add category breadcrumb
-        const categoryLink = document.createElement('a');
-        categoryLink.href = `category.html?cat=${product.category}`;
-        categoryLink.className = 'breadcrumb-item';
-        categoryLink.textContent = this.getCategoryDisplayName(product.category);
-        
-        const separator = document.createElement('span');
-        separator.className = 'breadcrumb-separator';
-        separator.textContent = '/';
-        
-        breadcrumbNav.insertBefore(separator, breadcrumb);
-        breadcrumbNav.insertBefore(categoryLink, separator);
     }
 
     getCategoryDisplayName(category) {
@@ -440,374 +393,401 @@ class ProductDetail {
             'motherboards': 'Motherboards',
             'memory': 'Memory',
             'storage': 'Storage',
+            'cooling': 'Cooling',
             'laptops': 'Laptops',
             'accessories': 'Accessories'
         };
-        return categoryMap[category] || category;
+        return categoryMap[category] || category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
 
     async loadRelatedProducts(category) {
-        const container = document.getElementById('relatedProductsCarousel');
-        
         try {
-            // Simulate API call for related products
-            const relatedProducts = await this.fetchRelatedProducts(category);
+            const response = await this.apiClient.getProducts({
+                category: category,
+                limit: 4,
+                exclude: this.currentProduct._id || this.currentProduct.id
+            });
             
-            if (relatedProducts && relatedProducts.length > 0) {
-                container.innerHTML = relatedProducts.map(product => 
-                    this.createProductCardHTML(product)
-                ).join('');
-            } else {
-                container.innerHTML = '<p>No related products found.</p>';
+            if (response.success && response.data) {
+                const products = response.data.products || response.data;
+                this.renderRelatedProducts(products);
             }
         } catch (error) {
-            console.error('Error loading related products:', error);
-            container.innerHTML = '<p>Unable to load related products.</p>';
+            console.error('Failed to load related products:', error);
         }
     }
 
-    async fetchRelatedProducts(category) {
-        // Mock related products data
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const mockProducts = [
-                    {
-                        id: 'related-1',
-                        name: 'AMD Ryzen 9 7950X',
-                        price: 699.99,
-                        originalPrice: 799.99,
-                        image: 'https://images.unsplash.com/photo-1555617778-02518db02b80?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-                        rating: 4.8,
-                        reviews: 156
-                    },
-                    {
-                        id: 'related-2',
-                        name: 'ASUS ROG Strix B650E',
-                        price: 399.99,
-                        image: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-                        rating: 4.6,
-                        reviews: 89
-                    },
-                    {
-                        id: 'related-3',
-                        name: 'Corsair Vengeance 32GB DDR5',
-                        price: 299.99,
-                        image: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-                        rating: 4.7,
-                        reviews: 203
-                    }
-                ];
-                resolve(mockProducts);
-            }, 300);
-        });
+    renderRelatedProducts(products) {
+        const relatedContainer = document.getElementById('relatedProducts');
+        if (!relatedContainer || products.length === 0) return;
+        
+        const productsHTML = products.map(product => this.createProductCardHTML(product)).join('');
+        relatedContainer.innerHTML = `
+            <h3>Related Products</h3>
+            <div class="related-products-grid">${productsHTML}</div>
+        `;
     }
 
     createProductCardHTML(product) {
-        const discountPercentage = product.originalPrice 
-            ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-            : 0;
-            
+        const productImage = this.getProductImage(product);
+        const isOnSale = product.originalPrice && product.originalPrice > product.price;
+        
         return `
-            <div class="product-card" onclick="window.location.href='product.html?id=${product.id}'">
+            <div class="product-card" onclick="window.location.href='product.html?id=${product._id || product.id}'">
                 <div class="product-image">
-                    <img src="${product.image}" alt="${product.name}" loading="lazy">
-                    ${discountPercentage > 0 ? `<span class="discount-badge">${discountPercentage}% OFF</span>` : ''}
+                    <img src="${productImage}" alt="${product.name}" loading="lazy">
+                    ${product.isNew ? '<span class="badge badge-new">New</span>' : ''}
+                    ${isOnSale ? '<span class="badge badge-sale">Sale</span>' : ''}
                 </div>
                 <div class="product-info">
-                    <h3 class="product-name">${product.name}</h3>
-                    <div class="product-rating">
-                        ${this.generateStarsHTML(product.rating)}
-                        <span class="rating-count">(${product.reviews})</span>
-                    </div>
+                    <h4 class="product-name">${product.name}</h4>
                     <div class="product-price">
                         <span class="current-price">${this.formatPrice(product.price)}</span>
-                        ${product.originalPrice ? `<span class="original-price">${this.formatPrice(product.originalPrice)}</span>` : ''}
+                        ${isOnSale ? `<span class="original-price">${this.formatPrice(product.originalPrice)}</span>` : ''}
                     </div>
                 </div>
             </div>
         `;
     }
 
+    getProductImage(product) {
+        if (product.images && product.images.length > 0) {
+            return product.images[0].url || product.images[0];
+        }
+        return product.image || this.getDefaultImage(product.category);
+    }
+
     loadRecentlyViewed() {
-        const recentlyViewed = this.getRecentlyViewedProducts();
+        const recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
         if (recentlyViewed.length > 0) {
-            const section = document.getElementById('recentlyViewedSection');
-            const container = document.getElementById('recentlyViewedCarousel');
-            
-            container.innerHTML = recentlyViewed.map(product => 
-                this.createProductCardHTML(product)
-            ).join('');
-            
-            section.style.display = 'block';
+            // Load recently viewed products from API
+            // Implementation would depend on your API structure
         }
     }
 
     initializeEventListeners() {
         // Quantity controls
-        const quantityInput = document.getElementById('quantityInput');
-        quantityInput.addEventListener('change', this.validateQuantity.bind(this));
-        quantityInput.addEventListener('input', this.validateQuantity.bind(this));
+        const quantityInput = document.getElementById('quantity');
+        const decreaseBtn = document.getElementById('decreaseQuantity');
+        const increaseBtn = document.getElementById('increaseQuantity');
         
-        // Add to cart
-        document.getElementById('addToCartBtn').addEventListener('click', this.addToCart.bind(this));
-        
-        // Wishlist
-        document.getElementById('wishlistBtn').addEventListener('click', this.toggleWishlist.bind(this));
-        
-        // Review form
-        const reviewForm = document.getElementById('reviewForm');
-        if (reviewForm) {
-            reviewForm.addEventListener('submit', this.submitReview.bind(this));
+        if (quantityInput) {
+            quantityInput.addEventListener('change', () => this.validateQuantity());
         }
         
-        // Star rating in review modal
-        const starBtns = document.querySelectorAll('.star-btn');
-        starBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const rating = parseInt(e.target.closest('.star-btn').dataset.rating);
-                this.setReviewRating(rating);
-            });
-        });
+        if (decreaseBtn) {
+            decreaseBtn.addEventListener('click', () => this.decrementQuantity());
+        }
+        
+        if (increaseBtn) {
+            increaseBtn.addEventListener('click', () => this.incrementQuantity());
+        }
+        
+        // Add to cart button
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', () => this.addToCart());
+        }
+        
+        // Wishlist button
+        const wishlistBtn = document.getElementById('wishlistBtn');
+        if (wishlistBtn) {
+            wishlistBtn.addEventListener('click', () => this.toggleWishlist());
+        }
         
         // Image zoom
         const mainImage = document.getElementById('mainImage');
         if (mainImage) {
-            mainImage.addEventListener('click', this.openImageZoom.bind(this));
+            mainImage.addEventListener('click', () => this.openImageZoom());
+        }
+        
+        // Share button
+        const shareBtn = document.getElementById('shareBtn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', () => this.shareProduct());
         }
     }
 
     initializeTabs() {
-        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
         
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const targetTab = btn.dataset.tab;
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.dataset.tab;
                 
-                // Remove active class from all tabs and contents
-                tabBtns.forEach(b => b.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
+                // Remove active class from all tabs
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
                 
-                // Add active class to clicked tab and corresponding content
-                btn.classList.add('active');
-                document.getElementById(targetTab).classList.add('active');
+                // Add active class to clicked tab
+                button.classList.add('active');
+                const targetContent = document.getElementById(tabId);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
             });
         });
     }
 
-    // Image gallery functions
     changeMainImage(index) {
-        const images = this.currentProduct.images;
-        if (images && images[index]) {
-            const mainImage = document.getElementById('mainImage');
-            const thumbnails = document.querySelectorAll('.thumbnail-image');
+        const mainImage = document.getElementById('mainImage');
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        const images = this.currentProduct.images || [];
+        
+        if (images[index] && mainImage) {
+            const imageUrl = images[index].url || images[index];
+            mainImage.src = imageUrl;
+            this.currentImageIndex = index;
             
-            mainImage.src = images[index].url;
-            mainImage.alt = images[index].alt;
-            
+            // Update thumbnail active state
             thumbnails.forEach((thumb, i) => {
                 thumb.classList.toggle('active', i === index);
             });
-            
-            this.currentImageIndex = index;
         }
     }
 
-    // Quantity functions
+    updateQuantityControls(maxStock) {
+        const quantityInput = document.getElementById('quantity');
+        const decreaseBtn = document.getElementById('decreaseQuantity');
+        const increaseBtn = document.getElementById('increaseQuantity');
+        
+        if (quantityInput) {
+            quantityInput.max = maxStock;
+            quantityInput.disabled = maxStock === 0;
+        }
+        
+        if (decreaseBtn) {
+            decreaseBtn.disabled = this.quantity <= 1 || maxStock === 0;
+        }
+        
+        if (increaseBtn) {
+            increaseBtn.disabled = this.quantity >= maxStock || maxStock === 0;
+        }
+    }
+
+    updateAddToCartButton(inStock) {
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        if (addToCartBtn) {
+            addToCartBtn.disabled = !inStock;
+            addToCartBtn.innerHTML = inStock ? 
+                '<i class="fas fa-shopping-cart"></i> Add to Cart' : 
+                '<i class="fas fa-times"></i> Out of Stock';
+        }
+    }
+
     validateQuantity() {
-        const input = document.getElementById('quantityInput');
-        const value = parseInt(input.value);
-        const max = parseInt(input.max);
-        const min = parseInt(input.min);
-        
-        if (value > max) {
-            input.value = max;
-        } else if (value < min) {
-            input.value = min;
+        const quantityInput = document.getElementById('quantity');
+        if (quantityInput) {
+            let value = parseInt(quantityInput.value);
+            const max = parseInt(quantityInput.max);
+            
+            if (isNaN(value) || value < 1) value = 1;
+            if (value > max) value = max;
+            
+            this.quantity = value;
+            quantityInput.value = value;
+            this.updateQuantityControls(max);
         }
     }
 
-    // Cart functions
-    addToCart() {
-        const product = this.currentProduct;
-        const quantity = parseInt(document.getElementById('quantityInput').value);
-        
-        if (!product || product.stock === 0) {
-            this.showToast('Product is out of stock', 'error');
-            return;
-        }
-        
-        if (quantity > product.stock) {
-            this.showToast(`Only ${product.stock} items available`, 'error');
-            return;
-        }
-        
-        // Add to cart logic
-        const cartItem = {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.images[0].url,
-            quantity: quantity,
-            sku: product.sku
-        };
-        
-        this.saveToCart(cartItem);
-        this.showToast('Product added to cart!', 'success');
-        this.updateCartCount();
-        
-        // Show cart toast
-        const cartToast = document.getElementById('cartToast');
-        if (cartToast) {
-            cartToast.classList.add('show');
-            setTimeout(() => cartToast.classList.remove('show'), 3000);
+    incrementQuantity() {
+        const quantityInput = document.getElementById('quantity');
+        if (quantityInput) {
+            const max = parseInt(quantityInput.max);
+            if (this.quantity < max) {
+                this.quantity++;
+                quantityInput.value = this.quantity;
+                this.updateQuantityControls(max);
+            }
         }
     }
 
-    saveToCart(item) {
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingItem = cart.find(cartItem => cartItem.id === item.id);
-        
-        if (existingItem) {
-            existingItem.quantity += item.quantity;
-        } else {
-            cart.push(item);
+    decrementQuantity() {
+        if (this.quantity > 1) {
+            this.quantity--;
+            const quantityInput = document.getElementById('quantity');
+            if (quantityInput) {
+                quantityInput.value = this.quantity;
+                const max = parseInt(quantityInput.max);
+                this.updateQuantityControls(max);
+            }
         }
+    }
+
+    async addToCart() {
+        if (!window.authManager.requireAuth()) return;
         
-        localStorage.setItem('cart', JSON.stringify(cart));
+        try {
+            const response = await this.apiClient.addToCart(
+                this.currentProduct._id || this.currentProduct.id, 
+                this.quantity
+            );
+            
+            if (response.success) {
+                window.authManager.showSuccessToast(`Added ${this.quantity} item(s) to cart!`);
+                this.updateCartCount();
+            } else {
+                throw new Error(response.message || 'Failed to add to cart');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            window.authManager.showErrorToast('Failed to add product to cart');
+        }
     }
 
     updateCartCount() {
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        const cartCount = document.getElementById('cartCount');
-        if (cartCount) {
-            cartCount.textContent = totalItems;
+        if (window.authManager.isLoggedIn()) {
+            this.apiClient.getCart().then(response => {
+                if (response.success) {
+                    const cartCount = document.getElementById('cartCount');
+                    if (cartCount) {
+                        const totalItems = response.data.items.reduce((sum, item) => sum + item.quantity, 0);
+                        cartCount.textContent = totalItems;
+                    }
+                }
+            }).catch(console.error);
         }
     }
 
-    // Wishlist functions
-    toggleWishlist() {
-        const product = this.currentProduct;
-        const btn = document.getElementById('wishlistBtn');
+    async toggleWishlist() {
+        if (!window.authManager.requireAuth()) return;
         
-        let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-        const existingIndex = wishlist.findIndex(item => item.id === product.id);
+        const wishlistBtn = document.getElementById('wishlistBtn');
+        if (!wishlistBtn) return;
         
-        if (existingIndex > -1) {
-            // Remove from wishlist
-            wishlist.splice(existingIndex, 1);
-            btn.innerHTML = '<i class="fas fa-heart"></i> Add to Wishlist';
-            this.showToast('Removed from wishlist', 'info');
-        } else {
-            // Add to wishlist
-            wishlist.push({
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                image: product.images[0].url
-            });
-            btn.innerHTML = '<i class="fas fa-heart-fill"></i> Remove from Wishlist';
-            this.showToast('Added to wishlist!', 'success');
+        try {
+            const isInWishlist = wishlistBtn.classList.contains('active');
+            
+            if (isInWishlist) {
+                await this.apiClient.removeFromWishlist(this.currentProduct._id || this.currentProduct.id);
+                wishlistBtn.classList.remove('active');
+                wishlistBtn.innerHTML = '<i class="far fa-heart"></i> Add to Wishlist';
+                window.authManager.showSuccessToast('Removed from wishlist');
+            } else {
+                await this.apiClient.addToWishlist(this.currentProduct._id || this.currentProduct.id);
+                wishlistBtn.classList.add('active');
+                wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> In Wishlist';
+                window.authManager.showSuccessToast('Added to wishlist');
+            }
+            
+            this.updateWishlistCount();
+        } catch (error) {
+            console.error('Wishlist error:', error);
+            window.authManager.showErrorToast('Failed to update wishlist');
         }
-        
-        localStorage.setItem('wishlist', JSON.stringify(wishlist));
-        this.updateWishlistCount();
     }
 
     updateWishlistCount() {
-        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-        const wishlistCount = document.getElementById('wishlistCount');
-        if (wishlistCount) {
-            wishlistCount.textContent = wishlist.length;
+        if (window.authManager.isLoggedIn()) {
+            this.apiClient.getWishlist().then(response => {
+                if (response.success) {
+                    const wishlistCount = document.getElementById('wishlistCount');
+                    if (wishlistCount) {
+                        wishlistCount.textContent = response.data.length;
+                    }
+                }
+            }).catch(console.error);
         }
     }
 
-    // Review functions
     setReviewRating(rating) {
         this.reviewRating = rating;
-        const starBtns = document.querySelectorAll('.star-btn');
-        
-        starBtns.forEach((btn, index) => {
-            if (index < rating) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+        const stars = document.querySelectorAll('.review-rating-input .star');
+        stars.forEach((star, index) => {
+            star.classList.toggle('active', index < rating);
         });
     }
 
-    submitReview(e) {
+    async submitReview(e) {
         e.preventDefault();
         
-        const title = document.getElementById('reviewTitle').value;
-        const comment = document.getElementById('reviewComment').value;
+        if (!window.authManager.requireAuth()) return;
         
-        if (!this.reviewRating || !title || !comment) {
-            this.showToast('Please fill in all review fields', 'error');
+        const formData = new FormData(e.target);
+        const reviewData = {
+            productId: this.currentProduct._id || this.currentProduct.id,
+            rating: this.reviewRating,
+            title: formData.get('title'),
+            comment: formData.get('comment')
+        };
+        
+        if (!reviewData.rating || reviewData.rating < 1) {
+            window.authManager.showErrorToast('Please select a rating');
             return;
         }
         
-        // In a real app, this would submit to the API
-        console.log('Submitting review:', {
-            rating: this.reviewRating,
-            title,
-            comment,
-            productId: this.currentProduct.id
-        });
-        
-        this.showToast('Review submitted successfully!', 'success');
-        this.closeReviewModal();
-        
-        // Reset form
-        document.getElementById('reviewForm').reset();
-        this.setReviewRating(0);
+        try {
+            const response = await this.apiClient.addReview(reviewData);
+            if (response.success) {
+                window.authManager.showSuccessToast('Review submitted successfully!');
+                this.closeReviewModal();
+                // Reload product to show new review
+                await this.loadProduct(this.currentProduct._id || this.currentProduct.id);
+            }
+        } catch (error) {
+            console.error('Review submission error:', error);
+            window.authManager.showErrorToast('Failed to submit review');
+        }
     }
 
-    markHelpful(reviewId) {
-        // In a real app, this would update the review in the database
-        console.log('Marking review as helpful:', reviewId);
-        this.showToast('Thank you for your feedback!', 'success');
+    async markHelpful(reviewId) {
+        try {
+            const response = await this.apiClient.markReviewHelpful(reviewId);
+            if (response.success) {
+                // Reload reviews to show updated helpful count
+                await this.loadProduct(this.currentProduct._id || this.currentProduct.id);
+            }
+        } catch (error) {
+            console.error('Mark helpful error:', error);
+        }
     }
 
-    // Modal functions
     openReviewModal() {
-        document.getElementById('reviewModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
+        const modal = document.getElementById('reviewModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
     }
 
     closeReviewModal() {
-        document.getElementById('reviewModal').classList.remove('active');
-        document.body.style.overflow = 'auto';
+        const modal = document.getElementById('reviewModal');
+        if (modal) {
+            modal.style.display = 'none';
+            // Reset form
+            const form = modal.querySelector('form');
+            if (form) form.reset();
+            this.reviewRating = 0;
+            this.setReviewRating(0);
+        }
     }
 
-    // Image zoom functions
     openImageZoom() {
-        const modal = document.getElementById('imageZoomModal');
-        const zoomedImage = document.getElementById('zoomedImage');
-        const mainImage = document.getElementById('mainImage');
+        const zoomModal = document.getElementById('imageZoomModal');
+        const zoomImage = document.getElementById('zoomImage');
         
-        zoomedImage.src = mainImage.src;
-        zoomedImage.alt = mainImage.alt;
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-        this.zoomLevel = 1;
-        zoomedImage.style.transform = 'scale(1)';
+        if (zoomModal && zoomImage) {
+            const mainImage = document.getElementById('mainImage');
+            zoomImage.src = mainImage.src;
+            zoomModal.style.display = 'flex';
+        }
     }
 
     closeImageZoom() {
-        document.getElementById('imageZoomModal').classList.remove('active');
-        document.body.style.overflow = 'auto';
+        const zoomModal = document.getElementById('imageZoomModal');
+        if (zoomModal) {
+            zoomModal.style.display = 'none';
+            this.resetZoom();
+        }
     }
 
     zoomIn() {
-        this.zoomLevel = Math.min(this.zoomLevel + 0.25, 3);
+        this.zoomLevel = Math.min(this.zoomLevel + 0.5, 3);
         this.updateZoom();
     }
 
     zoomOut() {
-        this.zoomLevel = Math.max(this.zoomLevel - 0.25, 0.5);
+        this.zoomLevel = Math.max(this.zoomLevel - 0.5, 1);
         this.updateZoom();
     }
 
@@ -817,11 +797,12 @@ class ProductDetail {
     }
 
     updateZoom() {
-        const zoomedImage = document.getElementById('zoomedImage');
-        zoomedImage.style.transform = `scale(${this.zoomLevel})`;
+        const zoomImage = document.getElementById('zoomImage');
+        if (zoomImage) {
+            zoomImage.style.transform = `scale(${this.zoomLevel})`;
+        }
     }
 
-    // Utility functions
     formatPrice(price, currency = 'USD') {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -830,143 +811,145 @@ class ProductDetail {
     }
 
     showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info'}-circle"></i>
-            <span>${message}</span>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => toast.classList.add('show'), 100);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => document.body.removeChild(toast), 300);
-        }, 3000);
+        if (window.authManager) {
+            if (type === 'success') {
+                window.authManager.showSuccessToast(message);
+            } else if (type === 'error') {
+                window.authManager.showErrorToast(message);
+            }
+        }
     }
 
     showError(message) {
-        const container = document.querySelector('.container');
-        container.innerHTML = `
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h2>Error</h2>
-                <p>${message}</p>
-                <a href="index.html" class="btn btn-primary">Return to Home</a>
-            </div>
-        `;
+        const errorContainer = document.getElementById('errorContainer');
+        if (errorContainer) {
+            errorContainer.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error Loading Product</h3>
+                    <p>${message}</p>
+                    <button class="btn btn-primary" onclick="window.location.href='category.html'">
+                        Browse Products
+                    </button>
+                </div>
+            `;
+            errorContainer.style.display = 'block';
+        }
     }
 
     showLoadingState() {
-        const productDetail = document.getElementById('productDetail');
-        productDetail.classList.add('loading');
+        const loadingContainer = document.getElementById('loadingContainer');
+        if (loadingContainer) {
+            loadingContainer.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Loading product details...</p>
+                </div>
+            `;
+            loadingContainer.style.display = 'block';
+        }
     }
 
     hideLoadingState() {
-        const productDetail = document.getElementById('productDetail');
-        productDetail.classList.remove('loading');
+        const loadingContainer = document.getElementById('loadingContainer');
+        if (loadingContainer) {
+            loadingContainer.style.display = 'none';
+        }
     }
 
     trackProductView(productId) {
-        // Track recently viewed products
+        // Add to recently viewed
         let recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-        
-        // Remove if already exists
-        recentlyViewed = recentlyViewed.filter(item => item.id !== productId);
-        
-        // Add to beginning
-        recentlyViewed.unshift({
-            id: productId,
-            name: this.currentProduct.name,
-            price: this.currentProduct.price,
-            image: this.currentProduct.images[0].url,
-            viewedAt: new Date().toISOString()
-        });
-        
-        // Keep only last 10 items
+        recentlyViewed = recentlyViewed.filter(id => id !== productId);
+        recentlyViewed.unshift(productId);
         recentlyViewed = recentlyViewed.slice(0, 10);
-        
         localStorage.setItem('recentlyViewed', JSON.stringify(recentlyViewed));
-    }
-
-    getRecentlyViewedProducts() {
-        return JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
     }
 
     shareProduct() {
         if (navigator.share && this.currentProduct) {
             navigator.share({
                 title: this.currentProduct.name,
-                text: this.currentProduct.shortDescription,
+                text: this.currentProduct.shortDescription || this.currentProduct.description,
                 url: window.location.href
             }).catch(console.error);
         } else {
-            // Fallback to copying URL
-            navigator.clipboard.writeText(window.location.href)
-                .then(() => this.showToast('Product URL copied to clipboard!', 'success'))
-                .catch(() => this.showToast('Failed to copy URL', 'error'));
+            // Fallback: copy URL to clipboard
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                this.showToast('Product URL copied to clipboard!', 'success');
+            }).catch(() => {
+                this.showToast('Failed to copy URL', 'error');
+            });
         }
     }
 }
 
-// Global functions for HTML onclick handlers
+// Global functions for backward compatibility
 function incrementQuantity() {
-    const input = document.getElementById('quantityInput');
-    const max = parseInt(input.max);
-    const current = parseInt(input.value);
-    if (current < max) {
-        input.value = current + 1;
+    if (window.productDetail) {
+        window.productDetail.incrementQuantity();
     }
 }
 
 function decrementQuantity() {
-    const input = document.getElementById('quantityInput');
-    const min = parseInt(input.min);
-    const current = parseInt(input.value);
-    if (current > min) {
-        input.value = current - 1;
+    if (window.productDetail) {
+        window.productDetail.decrementQuantity();
     }
 }
 
 function toggleZoom() {
-    productDetail.openImageZoom();
+    if (window.productDetail) {
+        window.productDetail.openImageZoom();
+    }
 }
 
 function toggleFullscreen() {
-    productDetail.openImageZoom();
+    // Implementation for fullscreen toggle
 }
 
 function shareProduct() {
-    productDetail.shareProduct();
+    if (window.productDetail) {
+        window.productDetail.shareProduct();
+    }
 }
 
 function openReviewModal() {
-    productDetail.openReviewModal();
+    if (window.productDetail) {
+        window.productDetail.openReviewModal();
+    }
 }
 
 function closeReviewModal() {
-    productDetail.closeReviewModal();
+    if (window.productDetail) {
+        window.productDetail.closeReviewModal();
+    }
 }
 
 function closeImageZoom() {
-    productDetail.closeImageZoom();
+    if (window.productDetail) {
+        window.productDetail.closeImageZoom();
+    }
 }
 
 function zoomIn() {
-    productDetail.zoomIn();
+    if (window.productDetail) {
+        window.productDetail.zoomIn();
+    }
 }
 
 function zoomOut() {
-    productDetail.zoomOut();
+    if (window.productDetail) {
+        window.productDetail.zoomOut();
+    }
 }
 
 function resetZoom() {
-    productDetail.resetZoom();
+    if (window.productDetail) {
+        window.productDetail.resetZoom();
+    }
 }
 
 // Initialize product detail page
-let productDetail;
-document.addEventListener('DOMContentLoaded', () => {
-    productDetail = new ProductDetail();
+document.addEventListener('DOMContentLoaded', function() {
+    window.productDetail = new ProductDetail();
 }); 

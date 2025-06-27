@@ -1,10 +1,11 @@
 // Category Page JavaScript
 class CategoryPage {
     constructor() {
+        this.apiClient = window.apiClient || new APIClient();
         this.currentCategory = this.getCategoryFromURL();
         this.currentFilters = {
             priceMin: 0,
-            priceMax: 2000,
+            priceMax: 5000,
             brands: [],
             availability: ['in-stock'],
             rating: null,
@@ -14,18 +15,26 @@ class CategoryPage {
         this.currentView = 'grid';
         this.currentPage = 1;
         this.itemsPerPage = 12;
-        this.allProducts = this.generateSampleProducts();
+        this.allProducts = [];
         this.filteredProducts = [];
+        this.totalProducts = 0;
+        this.categories = [];
         
         this.init();
     }
     
-    init() {
-        this.setupEventListeners();
-        this.updateCategoryHeader();
-        this.applyFilters();
-        this.renderProducts();
-        this.updateProductCount();
+    async init() {
+        try {
+            await this.loadCategories();
+            await this.loadProducts();
+            this.setupEventListeners();
+            this.updateCategoryHeader();
+            this.renderProducts();
+            this.updateProductCount();
+        } catch (error) {
+            console.error('Category page initialization error:', error);
+            this.showError('Failed to load category page');
+        }
     }
     
     getCategoryFromURL() {
@@ -37,495 +46,443 @@ class CategoryPage {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('search') || '';
     }
-    
-    generateSampleProducts() {
-        const products = [
-            {
-                id: 'rtx-4090',
-                name: 'NVIDIA RTX 4090',
-                price: 1599.99,
-                originalPrice: null,
-                image: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400',
-                category: 'graphics-cards',
-                brand: 'nvidia',
-                rating: 4.8,
-                reviews: 124,
-                inStock: true,
-                isNew: true,
-                onSale: false,
-                description: 'The ultimate gaming GPU with 24GB GDDR6X memory'
-            },
-            {
-                id: 'i9-13900k',
-                name: 'Intel Core i9-13900K',
-                price: 629.99,
-                originalPrice: 699.99,
-                image: 'https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=400',
-                category: 'processors',
-                brand: 'intel',
-                rating: 4.9,
-                reviews: 89,
-                inStock: true,
-                isNew: false,
-                onSale: true,
-                description: '24-core processor for extreme performance'
-            },
-            {
-                id: 'asus-z790',
-                name: 'ASUS ROG Maximus Z790 Hero',
-                price: 449.99,
-                originalPrice: null,
-                image: 'https://images.unsplash.com/photo-1562976540-906b13717cd1?w=400',
-                category: 'motherboards',
-                brand: 'asus',
-                rating: 4.6,
-                reviews: 67,
-                inStock: true,
-                isNew: false,
-                onSale: false,
-                description: 'Premium Z790 motherboard for gaming enthusiasts'
-            },
-            {
-                id: 'corsair-ddr5',
-                name: 'Corsair Vengeance DDR5-5600 32GB',
-                price: 199.99,
-                originalPrice: null,
-                image: 'https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?w=400',
-                category: 'memory',
-                brand: 'corsair',
-                rating: 4.7,
-                reviews: 203,
-                inStock: true,
-                isNew: false,
-                onSale: false,
-                description: 'High-speed DDR5 memory for demanding applications'
-            },
-            {
-                id: 'rtx-4070',
-                name: 'NVIDIA RTX 4070',
-                price: 899.99,
-                originalPrice: null,
-                image: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400',
-                category: 'graphics-cards',
-                brand: 'nvidia',
-                rating: 4.5,
-                reviews: 156,
-                inStock: true,
-                isNew: false,
-                onSale: false,
-                description: 'Excellent 1440p gaming performance'
-            },
-            {
-                id: 'amd-7800x3d',
-                name: 'AMD Ryzen 7 7800X3D',
-                price: 449.99,
-                originalPrice: 499.99,
-                image: 'https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=400',
-                category: 'processors',
-                brand: 'amd',
-                rating: 4.9,
-                reviews: 234,
-                inStock: true,
-                isNew: false,
-                onSale: true,
-                description: 'Gaming CPU with 3D V-Cache technology'
-            },
-            {
-                id: 'samsung-980pro',
-                name: 'Samsung 980 PRO 2TB NVMe SSD',
-                price: 179.99,
-                originalPrice: 229.99,
-                image: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400',
-                category: 'storage',
-                brand: 'samsung',
-                rating: 4.8,
-                reviews: 312,
-                inStock: true,
-                isNew: false,
-                onSale: true,
-                description: 'Lightning-fast PCIe 4.0 NVMe SSD'
-            },
-            {
-                id: 'gskill-ddr5',
-                name: 'G.SKILL Trident Z5 DDR5-6000 32GB',
-                price: 249.99,
-                originalPrice: null,
-                image: 'https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?w=400',
-                category: 'memory',
-                brand: 'gskill',
-                rating: 4.6,
-                reviews: 89,
-                inStock: true,
-                isNew: true,
-                onSale: false,
-                description: 'Premium RGB DDR5 memory kit'
+
+    async loadCategories() {
+        try {
+            const response = await this.apiClient.getCategories();
+            if (response.success) {
+                this.categories = response.data;
+                await this.loadBrandCounts();
             }
-        ];
-        
-        // Generate more products for pagination testing
-        const additionalProducts = [];
-        for (let i = 0; i < 20; i++) {
-            const baseProduct = products[i % products.length];
-            additionalProducts.push({
-                ...baseProduct,
-                id: `${baseProduct.id}-${i}`,
-                name: `${baseProduct.name} (Variant ${i + 1})`,
-                price: baseProduct.price + (Math.random() * 200 - 100),
-                reviews: Math.floor(Math.random() * 300) + 10
+        } catch (error) {
+            console.error('Failed to load categories:', error);
+            this.categories = this.getFallbackCategories();
+        }
+    }
+
+    async loadBrandCounts() {
+        try {
+            // Get all products to count brands
+            const response = await this.apiClient.getProducts({ limit: 1000 });
+            if (response.success) {
+                const products = response.data.products || response.data;
+                const brandCounts = {};
+                
+                products.forEach(product => {
+                    if (product.brand) {
+                        const brand = product.brand.toLowerCase();
+                        brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+                    }
+                });
+                
+                // Update brand count displays
+                Object.entries(brandCounts).forEach(([brand, count]) => {
+                    const countElement = document.getElementById(`${brand}-count`);
+                    if (countElement) {
+                        countElement.textContent = `(${count})`;
+                        countElement.style.display = count > 0 ? 'inline' : 'none';
+                    }
+                });
+                
+                // Hide brands with no products
+                ['nvidia', 'amd', 'intel', 'asus', 'corsair'].forEach(brand => {
+                    const countElement = document.getElementById(`${brand}-count`);
+                    if (countElement && !brandCounts[brand]) {
+                        countElement.textContent = '';
+                        // Optionally hide the entire filter option
+                        const filterOption = countElement.closest('.filter-option');
+                        if (filterOption) {
+                            filterOption.style.opacity = '0.5';
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load brand counts:', error);
+            // Hide all brand counts on error
+            ['nvidia', 'amd', 'intel', 'asus', 'corsair'].forEach(brand => {
+                const countElement = document.getElementById(`${brand}-count`);
+                if (countElement) {
+                    countElement.textContent = '';
+                }
             });
         }
-        
-        return [...products, ...additionalProducts];
+    }
+
+    async loadProducts() {
+        try {
+            this.showLoadingState();
+            
+            const params = {
+                page: this.currentPage,
+                limit: this.itemsPerPage,
+                sort: this.currentSort
+            };
+
+            // Add category filter
+            if (this.currentCategory && this.currentCategory !== 'all') {
+                params.category = this.currentCategory;
+            }
+
+            // Add search filter
+            if (this.currentFilters.search) {
+                params.search = this.currentFilters.search;
+            }
+
+            // Add price filters
+            if (this.currentFilters.priceMin > 0) {
+                params.minPrice = this.currentFilters.priceMin;
+            }
+            if (this.currentFilters.priceMax < 5000) {
+                params.maxPrice = this.currentFilters.priceMax;
+            }
+
+            // Add brand filters
+            if (this.currentFilters.brands.length > 0) {
+                params.brands = this.currentFilters.brands.join(',');
+            }
+
+            // Add availability filter
+            if (this.currentFilters.availability.includes('in-stock')) {
+                params.inStock = true;
+            }
+
+            // Add rating filter
+            if (this.currentFilters.rating) {
+                params.minRating = this.currentFilters.rating;
+            }
+
+            const response = await this.apiClient.getProducts(params);
+            
+            if (response.success) {
+                this.allProducts = response.data.products || response.data || [];
+                this.totalProducts = response.data.total || this.allProducts.length;
+                this.filteredProducts = this.allProducts;
+                
+                this.hideLoadingState();
+                this.renderProducts();
+                this.updateProductCount();
+            } else {
+                throw new Error(response.message || 'Failed to load products');
+            }
+            
+        } catch (error) {
+            console.error('Failed to load products:', error);
+            this.hideLoadingState();
+            
+            // Show user-friendly error instead of generic message
+            if (error.message.includes('Network')) {
+                this.showError('Network error. Please check your connection and try again.');
+            } else if (error.message.includes('404')) {
+                this.showError('No products found for this category.');
+            } else {
+                this.showError('Unable to load products at the moment. Please try again later.');
+            }
+            
+            // Set empty state instead of leaving undefined
+            this.allProducts = [];
+            this.filteredProducts = [];
+            this.totalProducts = 0;
+            this.renderProducts();
+            this.updateProductCount();
+        }
     }
     
     setupEventListeners() {
         // Price filters
         const minPriceInput = document.getElementById('minPrice');
         const maxPriceInput = document.getElementById('maxPrice');
-        const priceRangeSlider = document.getElementById('priceRange');
         
         if (minPriceInput) {
-            minPriceInput.addEventListener('input', () => {
+            minPriceInput.addEventListener('input', this.debounce(() => {
                 this.currentFilters.priceMin = parseFloat(minPriceInput.value) || 0;
                 this.applyFilters();
-            });
+            }, 500));
         }
         
         if (maxPriceInput) {
-            maxPriceInput.addEventListener('input', () => {
-                this.currentFilters.priceMax = parseFloat(maxPriceInput.value) || 2000;
+            maxPriceInput.addEventListener('input', this.debounce(() => {
+                this.currentFilters.priceMax = parseFloat(maxPriceInput.value) || 5000;
                 this.applyFilters();
-            });
+            }, 500));
         }
-        
-        if (priceRangeSlider) {
-            priceRangeSlider.addEventListener('input', () => {
-                this.currentFilters.priceMax = parseFloat(priceRangeSlider.value);
-                maxPriceInput.value = priceRangeSlider.value;
-                this.applyFilters();
-            });
-        }
-        
+
         // Brand filters
-        const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
+        const brandCheckboxes = document.querySelectorAll('input[name="brand"]');
         brandCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => {
-                if (checkbox.checked) {
-                    this.currentFilters.brands.push(checkbox.value);
-                } else {
-                    const index = this.currentFilters.brands.indexOf(checkbox.value);
-                    if (index > -1) {
-                        this.currentFilters.brands.splice(index, 1);
-                    }
-                }
+                this.updateBrandFilters();
                 this.applyFilters();
             });
         });
-        
+
         // Availability filters
-        const availabilityCheckboxes = document.querySelectorAll('.filter-options input[type="checkbox"]');
+        const availabilityCheckboxes = document.querySelectorAll('input[name="availability"]');
         availabilityCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => {
-                if (checkbox.checked) {
-                    if (!this.currentFilters.availability.includes(checkbox.value)) {
-                        this.currentFilters.availability.push(checkbox.value);
-                    }
-                } else {
-                    const index = this.currentFilters.availability.indexOf(checkbox.value);
-                    if (index > -1) {
-                        this.currentFilters.availability.splice(index, 1);
-                    }
-                }
+                this.updateAvailabilityFilters();
                 this.applyFilters();
             });
         });
-        
-        // Rating filters
-        const ratingRadios = document.querySelectorAll('input[name="rating"]');
-        ratingRadios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                this.currentFilters.rating = radio.value;
+
+        // Rating filter
+        const ratingInputs = document.querySelectorAll('input[name="rating"]');
+        ratingInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                this.currentFilters.rating = input.checked ? parseInt(input.value) : null;
                 this.applyFilters();
             });
         });
-        
+
         // Sort dropdown
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) {
             sortSelect.addEventListener('change', () => {
                 this.currentSort = sortSelect.value;
-                this.applyFilters();
+                this.loadProducts();
+            });
+        }
+
+        // View mode toggles
+        const gridViewBtn = document.getElementById('gridView');
+        const listViewBtn = document.getElementById('listView');
+        
+        if (gridViewBtn) {
+            gridViewBtn.addEventListener('click', () => {
+                this.currentView = 'grid';
+                this.updateViewMode();
             });
         }
         
-        // View toggles
-        const viewToggles = document.querySelectorAll('.view-toggle');
-        viewToggles.forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                viewToggles.forEach(t => t.classList.remove('active'));
-                toggle.classList.add('active');
-                this.currentView = toggle.dataset.view;
+        if (listViewBtn) {
+            listViewBtn.addEventListener('click', () => {
+                this.currentView = 'list';
                 this.updateViewMode();
             });
-        });
-        
-        // Clear filters
+        }
+
+        // Clear filters button
         const clearFiltersBtn = document.getElementById('clearFilters');
         if (clearFiltersBtn) {
             clearFiltersBtn.addEventListener('click', () => {
                 this.clearAllFilters();
             });
         }
-        
+
         // Pagination
         this.setupPaginationListeners();
     }
+
+    updateBrandFilters() {
+        const checkedBrands = Array.from(document.querySelectorAll('input[name="brand"]:checked'))
+            .map(input => input.value);
+        this.currentFilters.brands = checkedBrands;
+    }
+
+    updateAvailabilityFilters() {
+        const checkedAvailability = Array.from(document.querySelectorAll('input[name="availability"]:checked'))
+            .map(input => input.value);
+        this.currentFilters.availability = checkedAvailability;
+    }
     
     setupPaginationListeners() {
+        // Previous page
         const prevBtn = document.querySelector('.pagination-btn.prev');
-        const nextBtn = document.querySelector('.pagination-btn.next');
-        const pageNumbers = document.querySelectorAll('.pagination-number');
-        
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
                 if (this.currentPage > 1) {
                     this.currentPage--;
-                    this.renderProducts();
-                    this.updatePagination();
+                    this.loadProducts();
                 }
             });
         }
         
+        // Next page
+        const nextBtn = document.querySelector('.pagination-btn.next');
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
-                const totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+                const totalPages = Math.ceil(this.totalProducts / this.itemsPerPage);
                 if (this.currentPage < totalPages) {
                     this.currentPage++;
-                    this.renderProducts();
-                    this.updatePagination();
+                    this.loadProducts();
                 }
             });
         }
-        
-        pageNumbers.forEach(pageBtn => {
-            pageBtn.addEventListener('click', () => {
-                this.currentPage = parseInt(pageBtn.textContent);
-                this.renderProducts();
-                this.updatePagination();
-            });
-        });
     }
     
     updateCategoryHeader() {
         const categoryTitle = document.getElementById('categoryTitle');
         const categoryDescription = document.getElementById('categoryDescription');
-        const categoryIcon = document.getElementById('categoryIcon');
-        const currentCategoryBreadcrumb = document.getElementById('currentCategory');
+        const categoryBreadcrumb = document.getElementById('categoryBreadcrumb');
         
-        const categoryInfo = {
-            'graphics-cards': {
-                title: 'Graphics Cards',
-                description: 'High-performance GPUs for gaming, content creation, and professional workloads',
-                icon: 'fas fa-tv'
-            },
-            'processors': {
-                title: 'Processors',
-                description: 'Latest CPUs from Intel and AMD for every computing need',
-                icon: 'fas fa-microchip'
-            },
-            'motherboards': {
-                title: 'Motherboards',
-                description: 'Reliable and feature-rich motherboards for every build',
-                icon: 'fas fa-memory'
-            },
-            'memory': {
-                title: 'Memory (RAM)',
-                description: 'Fast DDR4 and DDR5 memory modules for optimal performance',
-                icon: 'fas fa-save'
-            },
-            'storage': {
-                title: 'Storage',
-                description: 'SSDs and HDDs for all your data storage needs',
-                icon: 'fas fa-hdd'
-            },
-            'laptops': {
-                title: 'Laptops',
-                description: 'Gaming and productivity laptops for every budget',
-                icon: 'fas fa-laptop'
-            },
-            'accessories': {
-                title: 'Accessories',
-                description: 'Gaming peripherals and computer accessories',
-                icon: 'fas fa-keyboard'
-            }
-        };
-        
-        const info = categoryInfo[this.currentCategory] || {
-            title: 'All Products',
-            description: 'Discover our complete range of premium computer components',
-            icon: 'fas fa-microchip'
-        };
-        
-        if (this.currentFilters.search) {
-            info.title = `Search Results for "${this.currentFilters.search}"`;
-            info.description = `Products matching your search query`;
+        if (this.currentCategory === 'all') {
+            if (categoryTitle) categoryTitle.textContent = 'All Products';
+            if (categoryDescription) categoryDescription.textContent = 'Browse our complete collection of premium PC components and accessories';
+            if (categoryBreadcrumb) categoryBreadcrumb.textContent = 'All Products';
+        } else if (this.currentFilters.search) {
+            if (categoryTitle) categoryTitle.textContent = `Search Results for "${this.currentFilters.search}"`;
+            if (categoryDescription) categoryDescription.textContent = `Showing results for "${this.currentFilters.search}"`;
+            if (categoryBreadcrumb) categoryBreadcrumb.textContent = 'Search Results';
+        } else {
+            const category = this.categories.find(cat => cat.slug === this.currentCategory);
+            const categoryName = category ? category.name : this.formatCategoryName(this.currentCategory);
+            const categoryDesc = category ? category.description : `Browse our selection of ${categoryName.toLowerCase()}`;
+            
+            if (categoryTitle) categoryTitle.textContent = categoryName;
+            if (categoryDescription) categoryDescription.textContent = categoryDesc;
+            if (categoryBreadcrumb) categoryBreadcrumb.textContent = categoryName;
         }
-        
-        if (categoryTitle) categoryTitle.textContent = info.title;
-        if (categoryDescription) categoryDescription.textContent = info.description;
-        if (categoryIcon) categoryIcon.innerHTML = `<i class="${info.icon}"></i>`;
-        if (currentCategoryBreadcrumb) currentCategoryBreadcrumb.textContent = info.title;
+    }
+
+    formatCategoryName(slug) {
+        return slug.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
     }
     
-    applyFilters() {
-        this.filteredProducts = this.allProducts.filter(product => {
-            // Category filter
-            if (this.currentCategory !== 'all' && product.category !== this.currentCategory) {
-                return false;
-            }
-            
-            // Search filter
-            if (this.currentFilters.search) {
-                const searchTerm = this.currentFilters.search.toLowerCase();
-                if (!product.name.toLowerCase().includes(searchTerm) &&
-                    !product.description.toLowerCase().includes(searchTerm)) {
-                    return false;
-                }
-            }
-            
-            // Price filter
-            if (product.price < this.currentFilters.priceMin || 
-                product.price > this.currentFilters.priceMax) {
-                return false;
-            }
-            
-            // Brand filter
-            if (this.currentFilters.brands.length > 0 && 
-                !this.currentFilters.brands.includes(product.brand)) {
-                return false;
-            }
-            
-            // Availability filter
-            if (this.currentFilters.availability.includes('in-stock') && !product.inStock) {
-                return false;
-            }
-            
-            if (this.currentFilters.availability.includes('on-sale') && !product.onSale) {
-                return false;
-            }
-            
-            if (this.currentFilters.availability.includes('new-arrivals') && !product.isNew) {
-                return false;
-            }
-            
-            // Rating filter
-            if (this.currentFilters.rating) {
-                const minRating = parseFloat(this.currentFilters.rating.replace('+', ''));
-                if (product.rating < minRating) {
-                    return false;
-                }
-            }
-            
-            return true;
-        });
-        
-        this.sortProducts();
-        this.currentPage = 1; // Reset to first page
-        this.renderProducts();
-        this.updateProductCount();
-        this.updatePagination();
-    }
-    
-    sortProducts() {
-        switch (this.currentSort) {
-            case 'price-low':
-                this.filteredProducts.sort((a, b) => a.price - b.price);
-                break;
-            case 'price-high':
-                this.filteredProducts.sort((a, b) => b.price - a.price);
-                break;
-            case 'name':
-                this.filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-                break;
-            case 'rating':
-                this.filteredProducts.sort((a, b) => b.rating - a.rating);
-                break;
-            case 'newest':
-                this.filteredProducts.sort((a, b) => b.isNew - a.isNew);
-                break;
-            default: // featured
-                this.filteredProducts.sort((a, b) => b.reviews - a.reviews);
-                break;
-        }
+    async applyFilters() {
+        this.currentPage = 1; // Reset to first page when filtering
+        await this.loadProducts();
     }
     
     renderProducts() {
-        const productsGrid = document.getElementById('productsGrid');
-        if (!productsGrid) return;
+        const productsContainer = document.getElementById('productsGrid');
+        if (!productsContainer) return;
         
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const endIndex = startIndex + this.itemsPerPage;
-        const productsToShow = this.filteredProducts.slice(startIndex, endIndex);
-        
-        if (productsToShow.length === 0) {
-            productsGrid.innerHTML = this.renderEmptyState();
+        if (this.filteredProducts.length === 0) {
+            this.renderEmptyState();
             return;
         }
         
-        productsGrid.innerHTML = productsToShow.map(product => this.renderProductCard(product)).join('');
+        productsContainer.innerHTML = this.filteredProducts.map(product => 
+            this.renderProductCard(product)
+        ).join('');
         
-        // Reinitialize cart functionality for new products
         this.initProductCardListeners();
+        this.updatePagination();
     }
     
     renderProductCard(product) {
-        const badges = [];
-        if (product.isNew) badges.push('<span class="badge badge-new">New</span>');
-        if (product.onSale) badges.push('<span class="badge badge-sale">Sale</span>');
+        const isOnSale = product.originalPrice && product.originalPrice > product.price;
+        const discountPercent = isOnSale ? 
+            Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
         
-        const stars = Array.from({length: 5}, (_, i) => {
-            const isFilled = i < Math.floor(product.rating);
-            const iconClass = isFilled ? 'fas fa-star' : 'far fa-star';
-            return `<i class="${iconClass}"></i>`;
-        }).join('');
-        
-        const priceHtml = product.originalPrice ? 
-            `<span class="original-price">$${product.originalPrice.toFixed(2)}</span>
-             <span class="current-price">$${product.price.toFixed(2)}</span>` :
-            `<span class="current-price">$${product.price.toFixed(2)}</span>`;
+        const productImage = this.getProductImage(product);
+        const productRating = this.calculateAverageRating(product.reviews);
         
         return `
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="${product.image}" alt="${product.name}" loading="lazy">
-                    ${badges.length > 0 ? `<div class="product-badges">${badges.join('')}</div>` : ''}
-                    <button class="wishlist-btn" data-product-id="${product.id}">
+            <div class="product-card ${this.currentView === 'list' ? 'list-view' : ''}" data-product-id="${product._id || product.id}">
+                <div class="product-image-container">
+                    <img src="${productImage}" 
+                         alt="${product.name}" 
+                         class="product-image"
+                         loading="lazy"
+                         onerror="this.src='https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400'">
+                    
+                    <div class="product-badges">
+                        ${product.isNew ? '<span class="badge badge-new">New</span>' : ''}
+                        ${isOnSale ? `<span class="badge badge-sale">${discountPercent}% Off</span>` : ''}
+                        ${product.isBestseller ? '<span class="badge badge-bestseller">Bestseller</span>' : ''}
+                    </div>
+                    
+                    <button class="wishlist-btn" onclick="toggleWishlist('${product._id || product.id}', this)">
                         <i class="fas fa-heart"></i>
                     </button>
                 </div>
+                
                 <div class="product-info">
                     <h3 class="product-name">
-                        <a href="product.html?id=${product.id}">${product.name}</a>
+                        <a href="product.html?id=${product._id || product.id}">${product.name}</a>
                     </h3>
-                    <div class="product-rating">
-                        <div class="stars">${stars}</div>
-                        <span class="rating-count">(${product.reviews})</span>
+                    
+                    ${productRating > 0 ? `
+                        <div class="product-rating">
+                            ${this.generateStarRating(productRating)}
+                            <span class="rating-count">(${product.reviews?.length || 0})</span>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="product-price">
+                        <span class="current-price">$${product.price.toFixed(2)}</span>
+                        ${isOnSale ? `<span class="original-price">$${product.originalPrice.toFixed(2)}</span>` : ''}
                     </div>
-                    <div class="product-price">${priceHtml}</div>
-                    <button class="btn btn-primary add-to-cart" data-product-id="${product.id}">
-                        Add to Cart
+                    
+                    <div class="product-stock">
+                        ${product.stock > 0 ? 
+                            `<span class="in-stock">✓ In Stock (${product.stock})</span>` :
+                            `<span class="out-of-stock">✗ Out of Stock</span>`
+                        }
+                    </div>
+                    
+                    <button class="btn btn-primary add-to-cart-btn" 
+                            onclick="addToCart('${product._id || product.id}')"
+                            ${product.stock === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-shopping-cart"></i>
+                        ${product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                     </button>
                 </div>
             </div>
         `;
     }
+
+    getProductImage(product) {
+        if (product.images && product.images.length > 0) {
+            return product.images[0].url || product.images[0];
+        }
+        return product.image || this.getDefaultImage(product.category);
+    }
+
+    getDefaultImage(category) {
+        const defaultImages = {
+            'graphics-cards': 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400',
+            'processors': 'https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=400',
+            'motherboards': 'https://images.unsplash.com/photo-1562976540-906b13717cd1?w=400',
+            'memory': 'https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?w=400',
+            'storage': 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400',
+            'cooling': 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?w=400'
+        };
+        return defaultImages[category] || 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400';
+    }
+
+    calculateAverageRating(reviews) {
+        if (!reviews || reviews.length === 0) return 0;
+        const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+        return total / reviews.length;
+    }
+
+    generateStarRating(rating) {
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+        
+        let stars = '';
+        
+        for (let i = 0; i < fullStars; i++) {
+            stars += '<i class="fas fa-star"></i>';
+        }
+        
+        if (hasHalfStar) {
+            stars += '<i class="fas fa-star-half-alt"></i>';
+        }
+        
+        for (let i = 0; i < emptyStars; i++) {
+            stars += '<i class="far fa-star"></i>';
+        }
+        
+        return `<div class="stars">${stars}</div>`;
+    }
     
     renderEmptyState() {
-        return `
+        const productsContainer = document.getElementById('productsGrid');
+        if (!productsContainer) return;
+        
+        productsContainer.innerHTML = `
             <div class="empty-state">
-                <i class="fas fa-search"></i>
-                <h3>No products found</h3>
-                <p>Try adjusting your filters or search terms</p>
+                <div class="empty-state-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>No Products Found</h3>
+                <p>We couldn't find any products matching your criteria.</p>
                 <button class="btn btn-primary" onclick="categoryPage.clearAllFilters()">
                     Clear Filters
                 </button>
@@ -534,132 +491,263 @@ class CategoryPage {
     }
     
     initProductCardListeners() {
-        // Add to cart buttons
-        const addToCartButtons = document.querySelectorAll('.add-to-cart');
-        addToCartButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                const productId = button.getAttribute('data-product-id');
-                if (window.TechCore && window.TechCore.addToCart) {
-                    window.TechCore.addToCart(productId);
-                }
-            });
-        });
-        
-        // Wishlist buttons
-        const wishlistButtons = document.querySelectorAll('.wishlist-btn');
-        wishlistButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const productId = button.getAttribute('data-product-id');
-                if (window.TechCore && window.TechCore.toggleWishlist) {
-                    window.TechCore.toggleWishlist(productId, button);
+        // Add event listeners for product interactions
+        const productCards = document.querySelectorAll('.product-card');
+        productCards.forEach(card => {
+            const productId = card.dataset.productId;
+            
+            // Track product view on click (excluding buttons)
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('button')) {
+                    this.trackProductView(productId);
                 }
             });
         });
     }
+
+    trackProductView(productId) {
+        // Add to recently viewed
+        let recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+        recentlyViewed = recentlyViewed.filter(id => id !== productId);
+        recentlyViewed.unshift(productId);
+        recentlyViewed = recentlyViewed.slice(0, 10);
+        localStorage.setItem('recentlyViewed', JSON.stringify(recentlyViewed));
+    }
     
     updateViewMode() {
-        const productsGrid = document.getElementById('productsGrid');
-        if (productsGrid) {
-            productsGrid.classList.toggle('list-view', this.currentView === 'list');
+        const productsContainer = document.getElementById('productsGrid');
+        const gridViewBtn = document.getElementById('gridView');
+        const listViewBtn = document.getElementById('listView');
+        
+        if (this.currentView === 'grid') {
+            productsContainer?.classList.remove('list-view');
+            gridViewBtn?.classList.add('active');
+            listViewBtn?.classList.remove('active');
+        } else {
+            productsContainer?.classList.add('list-view');
+            listViewBtn?.classList.add('active');
+            gridViewBtn?.classList.remove('active');
         }
     }
     
     updateProductCount() {
         const productCount = document.getElementById('productCount');
-        const resultsCount = document.getElementById('resultsCount');
-        
-        const total = this.filteredProducts.length;
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
-        const endIndex = Math.min(this.currentPage * this.itemsPerPage, total);
-        
         if (productCount) {
-            productCount.textContent = `${total} product${total !== 1 ? 's' : ''}`;
-        }
-        
-        if (resultsCount) {
-            if (total === 0) {
-                resultsCount.textContent = 'No results';
-            } else {
-                resultsCount.textContent = `Showing ${startIndex}-${endIndex} of ${total} results`;
-            }
+            const start = ((this.currentPage - 1) * this.itemsPerPage) + 1;
+            const end = Math.min(this.currentPage * this.itemsPerPage, this.totalProducts);
+            productCount.textContent = `Showing ${start}-${end} of ${this.totalProducts} products`;
         }
     }
     
     updatePagination() {
-        const totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+        const totalPages = Math.ceil(this.totalProducts / this.itemsPerPage);
+        const paginationContainer = document.querySelector('.pagination-numbers');
+        
+        if (!paginationContainer || totalPages <= 1) {
+            const paginationElement = document.querySelector('.pagination');
+            if (paginationElement) {
+                paginationElement.style.display = 'none';
+            }
+            return;
+        }
+
+        const paginationElement = document.querySelector('.pagination');
+        if (paginationElement) {
+            paginationElement.style.display = 'flex';
+        }
+
+        // Update prev/next buttons
         const prevBtn = document.querySelector('.pagination-btn.prev');
         const nextBtn = document.querySelector('.pagination-btn.next');
-        const pageNumbers = document.querySelectorAll('.pagination-number');
         
-        // Update prev/next buttons
-        if (prevBtn) {
-            prevBtn.disabled = this.currentPage === 1;
+        if (prevBtn) prevBtn.disabled = this.currentPage === 1;
+        if (nextBtn) nextBtn.disabled = this.currentPage === totalPages;
+
+        // Generate page numbers
+        let paginationHTML = '';
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
         }
-        
-        if (nextBtn) {
-            nextBtn.disabled = this.currentPage === totalPages || totalPages === 0;
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHTML += `
+                <button class="pagination-number ${i === this.currentPage ? 'active' : ''}" 
+                        onclick="categoryPage.goToPage(${i})">
+                    ${i}
+                </button>
+            `;
         }
-        
-        // Update page numbers (simplified - just show current page state)
-        pageNumbers.forEach(pageBtn => {
-            const pageNum = parseInt(pageBtn.textContent);
-            pageBtn.classList.toggle('active', pageNum === this.currentPage);
-        });
-        
-        // Scroll to top of products
-        const productsSection = document.querySelector('.products-section');
-        if (productsSection) {
-            productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                paginationHTML += '<span class="pagination-dots">...</span>';
+            }
+            paginationHTML += `
+                <button class="pagination-number" onclick="categoryPage.goToPage(${totalPages})">
+                    ${totalPages}
+                </button>
+            `;
         }
+
+        paginationContainer.innerHTML = paginationHTML;
+    }
+
+    goToPage(page) {
+        this.currentPage = page;
+        this.loadProducts();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
     clearAllFilters() {
-        // Reset filters
+        // Reset all filters
         this.currentFilters = {
             priceMin: 0,
-            priceMax: 2000,
+            priceMax: 5000,
             brands: [],
             availability: ['in-stock'],
             rating: null,
             search: this.getSearchFromURL()
         };
         
-        // Reset form elements
+        // Reset UI elements
         const minPriceInput = document.getElementById('minPrice');
         const maxPriceInput = document.getElementById('maxPrice');
-        const priceRangeSlider = document.getElementById('priceRange');
         
         if (minPriceInput) minPriceInput.value = '';
         if (maxPriceInput) maxPriceInput.value = '';
-        if (priceRangeSlider) priceRangeSlider.value = 2000;
         
-        // Reset checkboxes
-        const checkboxes = document.querySelectorAll('.filters-sidebar input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = checkbox.value === 'in-stock';
+        // Clear checkboxes
+        document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(input => {
+            input.checked = false;
         });
         
-        // Reset radio buttons
-        const radioButtons = document.querySelectorAll('.filters-sidebar input[type="radio"]');
-        radioButtons.forEach(radio => {
-            radio.checked = false;
-        });
+        // Reset availability to in-stock
+        const inStockCheckbox = document.querySelector('input[name="availability"][value="in-stock"]');
+        if (inStockCheckbox) inStockCheckbox.checked = true;
         
-        // Apply filters
+        // Reload products
         this.applyFilters();
+    }
+
+    showLoadingState() {
+        const productsContainer = document.getElementById('productsGrid');
+        if (productsContainer) {
+            productsContainer.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Loading products...</p>
+                </div>
+            `;
+        }
+    }
+
+    hideLoadingState() {
+        // Loading state will be replaced by products or empty state
+    }
+
+    showError(message) {
+        if (window.authManager) {
+            window.authManager.showErrorToast(message);
+        } else {
+            console.error(message);
+        }
+    }
+
+    getFallbackCategories() {
+        return [
+            { _id: 'graphics-cards', name: 'Graphics Cards', slug: 'graphics-cards' },
+            { _id: 'processors', name: 'Processors', slug: 'processors' },
+            { _id: 'motherboards', name: 'Motherboards', slug: 'motherboards' },
+            { _id: 'memory', name: 'Memory', slug: 'memory' },
+            { _id: 'storage', name: 'Storage', slug: 'storage' },
+            { _id: 'cooling', name: 'Cooling', slug: 'cooling' }
+        ];
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 }
 
-// Initialize category page when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Only initialize if we're on the category page
-    if (document.getElementById('productsGrid')) {
-        window.categoryPage = new CategoryPage();
+// Global functions for backward compatibility
+async function addToCart(productId, quantity = 1) {
+    if (window.authManager && !window.authManager.requireAuth()) return;
+    
+    try {
+        const response = await window.apiClient.addToCart(productId, quantity);
+        if (response.success) {
+            window.authManager.showSuccessToast('Product added to cart!');
+            updateCartCount();
+        }
+    } catch (error) {
+        console.error('Add to cart error:', error);
+        window.authManager.showErrorToast('Failed to add product to cart');
     }
-});
+}
 
-// Export for global access
-window.CategoryPage = CategoryPage; 
+async function toggleWishlist(productId, button) {
+    if (window.authManager && !window.authManager.requireAuth()) return;
+    
+    try {
+        const isInWishlist = button.classList.contains('active');
+        
+        if (isInWishlist) {
+            await window.apiClient.removeFromWishlist(productId);
+            button.classList.remove('active');
+            window.authManager.showSuccessToast('Removed from wishlist');
+        } else {
+            await window.apiClient.addToWishlist(productId);
+            button.classList.add('active');
+            window.authManager.showSuccessToast('Added to wishlist');
+        }
+        
+        updateWishlistCount();
+    } catch (error) {
+        console.error('Wishlist error:', error);
+        window.authManager.showErrorToast('Failed to update wishlist');
+    }
+}
+
+function updateCartCount() {
+    if (window.authManager && window.authManager.isLoggedIn()) {
+        window.apiClient.getCart().then(response => {
+            if (response.success) {
+                const cartCount = document.getElementById('cartCount');
+                if (cartCount) {
+                    const totalItems = response.data.items.reduce((sum, item) => sum + item.quantity, 0);
+                    cartCount.textContent = totalItems;
+                }
+            }
+        }).catch(console.error);
+    }
+}
+
+function updateWishlistCount() {
+    if (window.authManager && window.authManager.isLoggedIn()) {
+        window.apiClient.getWishlist().then(response => {
+            if (response.success) {
+                const wishlistCount = document.getElementById('wishlistCount');
+                if (wishlistCount) {
+                    wishlistCount.textContent = response.data.length;
+                }
+            }
+        }).catch(console.error);
+    }
+}
+
+// Initialize category page
+document.addEventListener('DOMContentLoaded', function() {
+    window.categoryPage = new CategoryPage();
+}); 
